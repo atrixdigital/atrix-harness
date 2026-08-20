@@ -1,0 +1,8 @@
+{
+  "name": "atrix-skills",
+  "description": "The Atrix skill library — engineering, methodology, delivery, infra, documents and communication.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Atrix"
+  }
+}

@@ -1,0 +1,45 @@
+---
+name: typescript-strict
+description: TypeScript conventions for Atrix repos — strict mode settings, and the Zod patterns that break under them.
+source: incident-0001
+applies: [**/*.ts, **/*.tsx]
+---
+
+Strict mode, ES modules, `const` over `let`, never `var`. Destructure imports and props.
+Zod validates at every system boundary.
+
+## Zod generics — parameterise by the schema, never the payload
+
+A Zod schema has two types: **input** (where `.default()` fields are optional) and **output**
+(where they are required). A generic constrained on the payload resolves against the input type,
+so the helper returns optional fields while the caller expects required ones.
+
+```ts
+// ✗ resolves T against the schema's INPUT type — fails at the call site, not here
+function load<T>(files: string[], schema: z.ZodType<T>): Doc<T>[]
+
+// ✓ constrain on the schema, derive the type from it
+function load<S extends z.ZodTypeAny>(files: string[], schema: S): Doc<z.infer<S>>[]
+```
+
+The wrong form typechecks in isolation and only errors where it is used, which is a confusing
+place to diagnose it.
+
+## `exactOptionalPropertyTypes` changes what optional means
+
+With this flag on, `detail?: string` accepts *omitting* `detail` but rejects passing `undefined`
+explicitly. If a value is genuinely computed as possibly-undefined, declare it:
+
+```ts
+interface Check { detail?: string | undefined }
+```
+
+Keep the flag on. It surfaces exactly this class of bug at the definition instead of hiding it.
+
+## Enabled flags
+
+`strict`, `noUncheckedIndexedAccess`, `noImplicitOverride`, `noUnusedLocals`,
+`noUnusedParameters`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`.
+
+`noUncheckedIndexedAccess` means `array[i]` is `T | undefined`. That is correct — handle it rather
+than reaching for `!`.

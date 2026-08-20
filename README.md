@@ -1,0 +1,83 @@
+# atrix-harness
+
+The Atrix agent operating system — rules, methodology, skills, code graphs and orchestration
+patterns that every Atrix engineer's agent starts from, whichever agent that is.
+
+**One core, every agent.** Everything lives once in `core/` as plain markdown. `atrix build`
+compiles it into native packaging for Claude Code, Codex, Cursor, Gemini and Orca. Adding a new
+agent is an adapter, not a rewrite.
+
+**It compounds.** When someone hits a problem, `atrix learn` captures it. Distilled, reviewed and
+merged, it becomes a rule everyone gets. Every rule carries the incident that produced it — and
+rules that stop mattering get pruned. A harness that only grows is a harness that rots.
+
+---
+
+## Install
+
+```bash
+git clone https://github.com/atrixdigital/atrix-harness.git
+cd atrix-harness && bun install && bun run atrix build
+```
+
+Add to your shell so `atrix` works from any repo:
+
+```bash
+export ATRIX_HOME="$HOME/path/to/atrix-harness"
+alias atrix="bun run $ATRIX_HOME/packages/cli/src/index.ts"
+```
+
+### Claude Code
+
+```
+/plugin marketplace add <path-to>/atrix-harness/adapters/claude
+/plugin install atrix-core@atrix-harness
+/plugin install atrix-skills@atrix-harness
+```
+
+### Codex, Gemini, Cursor
+
+Point the agent at the generated bundle — `adapters/codex/AGENTS.md`,
+`adapters/gemini/GEMINI.md`, or copy `adapters/cursor/.cursor/` into the repo.
+
+### Any repo
+
+```bash
+cd ~/your-project
+atrix init      # writes AGENTS.md, CLAUDE.md, .atrix/config.json
+```
+
+---
+
+## Commands
+
+| | |
+|---|---|
+| `atrix build` | Regenerate `adapters/` from `core/` |
+| `atrix init` | Scaffold the current repo to use the harness |
+| `atrix doctor` | Check everything is wired up |
+| `atrix learn "<what bit you>"` | Capture an incident — the start of the loop |
+
+`distill`, `index`, `sync` and `eval` land in later phases — see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+---
+
+## Layout
+
+```
+AGENTS.md      the operating manual every agent reads — capped at 60 lines
+core/          the portable source of truth: rules, methodology, skills, roles, playbooks
+graphs/        code, dependency, information and org-wide source graphs (served over MCP)
+learning/      incidents → candidates → merged rules. The compounding loop.
+adapters/      GENERATED per-agent packaging. Never hand-edited.
+packages/      the atrix CLI, graph engine and MCP server
+evals/         measures which harness layers still earn their place
+```
+
+## Contributing
+
+Add a rule only when you can name the incident behind it — CI enforces the `source:` field.
+Edit `core/`, never `adapters/`. Run `atrix build && bun test && bun run typecheck` before
+opening a PR.
+
+Why any of this is shaped the way it is: [docs/RESEARCH.md](docs/RESEARCH.md).

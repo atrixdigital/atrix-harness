@@ -1,0 +1,37 @@
+{
+  "name": "atrix-harness",
+  "description": "The Atrix agent operating system.",
+  "owner": {
+    "name": "Atrix",
+    "email": "hello@atrix.dev"
+  },
+  "plugins": [
+    {
+      "name": "atrix-core",
+      "description": "Atrix harness core — engineering roles, rules, methodology and the learning loop. Install this first.",
+      "author": {
+        "name": "Atrix"
+      },
+      "category": "productivity",
+      "source": "./plugins/atrix-core"
+    },
+    {
+      "name": "atrix-skills",
+      "description": "The Atrix skill library — engineering, methodology, delivery, infra, documents and communication.",
+      "author": {
+        "name": "Atrix"
+      },
+      "category": "productivity",
+      "source": "./plugins/atrix-skills"
+    },
+    {
+      "name": "atrix-stack",
+      "description": "Atrix stack conventions — Next.js, Elysia/Bun, Prisma, Kysely, Expo, Stripe.",
+      "author": {
+        "name": "Atrix"
+      },
+      "category": "productivity",
+      "source": "./plugins/atrix-stack"
+    }
+  ]
+}

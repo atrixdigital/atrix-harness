@@ -1,0 +1,19 @@
+---
+description: What must actually run before work is reported as finished, and how to report the result.
+globs: **
+---
+
+"Done" means verified, not written.
+
+- After code changes: run the repo's typecheck and the **relevant** tests — not the full suite.
+- After config changes: confirm the thing still starts.
+- After schema changes: check migration status.
+- After UI changes: look at it, or hand it to the `evaluator` role.
+
+**Never self-grade non-trivial work.** Models rate their own mediocre output highly; external
+evaluation against a written rubric is what actually catches broken behaviour. In practice the
+difference is stark — self-reviewed work ships with core functionality silently non-functional.
+
+**Report faithfully.** If tests fail, say so and paste the output. If you skipped a step, say which
+and why. If part of the task was blocked, finish everything else and state plainly what is left.
+Never report completion you have not observed.

@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        run: bun x tsc --noEmit
+
+      - name: Test
+        run: bun test
+
+      # Validates every rule's `source:` provenance, the 60-line AGENTS.md cap,
+      # and that core/ compiles for all five agents.
+      - name: Doctor
+        run: bun run atrix doctor
+
+      - name: Adapters are up to date
+        run: |
+          bun run atrix build
+          if ! git diff --quiet -- adapters; then
+            echo "::error::adapters/ is stale. Run 'bun run atrix build' and commit the result."
+            git diff --stat -- adapters
+            exit 1
+          fi

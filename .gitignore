@@ -1,0 +1,17 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# graph indexes — always local, never committed
+.atrix/
+*.db
+*.db-wal
+*.db-shm
+
+# env & secrets
+.env
+.env.*
+!.env.example
+
+.DS_Store
+*.log

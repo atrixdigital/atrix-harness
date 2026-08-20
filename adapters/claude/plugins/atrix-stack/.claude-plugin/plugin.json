@@ -1,0 +1,8 @@
+{
+  "name": "atrix-stack",
+  "description": "Atrix stack conventions — Next.js, Elysia/Bun, Prisma, Kysely, Expo, Stripe.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Atrix"
+  }
+}
