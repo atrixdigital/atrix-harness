@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join, relative, sep } from 'node:path';
 import { log } from '../lib/log.ts';
 
@@ -90,6 +90,17 @@ Repo-specific context below overrides the harness on conventions, never on safet
     'CLAUDE.md',
     `# Pointer\n\nRead **[AGENTS.md](./AGENTS.md)**, then \`${harnessRel}/AGENTS.md\`.\n`,
   );
+
+  // The index and the trace are local-only. The trace is redacted by construction, but
+  // it should still never reach a remote.
+  const gitignore = join(projectRoot, '.gitignore');
+  const ignoreLine = '.atrix/';
+  const existing = existsSync(gitignore) ? readFileSync(gitignore, 'utf8') : '';
+  if (!existing.split(/\r?\n/).some((l) => l.trim() === ignoreLine)) {
+    const prefix = existing === '' || existing.endsWith('\n') ? '' : '\n';
+    appendFileSync(gitignore, `${prefix}\n# atrix code graph and local trace — never committed\n${ignoreLine}\n`, 'utf8');
+    created.push('.gitignore (+ .atrix/)');
+  }
 
   for (const rel of created) log.ok(`created ${rel}`);
   for (const rel of skipped) log.detail(`kept existing ${rel}`);

@@ -169,6 +169,94 @@ Consequences we enforce mechanically in `atrix lint`:
 
 The linter found two real defects in this repo's own first skill on its first run.
 
+## 6c. DeepSeek Harness: what an open harness looks like
+
+DeepSeek shipped **DeepSeek Harness (`dsh`)** on 2026-08-13 under MIT — a runnable agent stack
+rather than a model announcement. It took ~95,000 GitHub stars in two days. Its framing is the
+same as this repo's: *Model + Harness = Agent*, with the harness treated as a product layer
+co-equal to the model rather than an afterthought.
+
+**Architecture: everything is a plugin.** Not a privileged core with extension points — the model
+adapter, tool registry, session log, prompt assembly, loop driver and the agent loop itself are
+all swappable. Six services form a control spine; around them sit "capability seams" (declared
+interfaces with swappable providers), so pointing the filesystem and subprocess providers at a
+remote sandbox moves execution without forking any tool.
+
+### The invariant worth stealing: "model-visible means logged"
+
+Anything that reaches a model request must be reconstructible from an append-only session log,
+with runtime assertions enforcing it. That single constraint buys three things that are otherwise
+very hard: **deterministic replay, honest token accounting, and compaction implemented as a plugin
+rather than baked into the loop.**
+
+A turn is zero or more steps; a step is one model request plus its tool calls. Tools run through a
+guarded pipeline — pre-hooks, permission checks, approval prompts, timeout/retry wrappers,
+post-execute rewriting — before results freeze into the log.
+
+**What we took:** we are not a runtime and should not become one — Atrix agents run inside Claude
+Code, Codex and Orca, which own their loops. But the *logging* invariant applies to anything, and
+we had nothing. `core/hooks/record-trace.ts` is the smallest useful version of it.
+
+**Also notable:** `dsh` loads `AGENTS.md`/`CLAUDE.md` natively and discovers skills from the
+filesystem — which is precisely why this repo's core is portable markdown rather than one
+vendor's plugin format. A sixth adapter would be a small amount of work.
+
+Related: **DeepClaude** swaps the endpoint under Claude Code's unchanged loop, running the same
+harness against DeepSeek V4-Pro at roughly an order of magnitude lower cost per token
+($0.87/M output vs $15/M). Same body, different brain — more evidence that the harness, not the
+model, is the durable artefact.
+
+## 6d. Harnesses can evolve from their own telemetry
+
+*Agentic Harness Engineering: Observability-Driven Automatic Evolution* (arXiv 2604.25850) closes
+the loop this repo opened by hand. Collect execution traces, outcomes and failure modes; mine them
+for which harness components correlate with better results; generate candidate modifications;
+**validate on held-out tasks before deploying**. Reported gains: **5–15% relative** on coding
+benchmarks, generalising across GPT, Qwen and DeepSeek backends.
+
+The takeaway for builders is blunt: stop relying on intuition, adopt observability-driven
+iteration cycles.
+
+**What we took:** this named the single biggest gap in the design. The learning loop's input was
+"a human remembered", which catches the failures people *notice* and misses the ones they absorb —
+and the person who hits the same failure eleven times has stopped noticing by the fourth.
+`core/hooks/record-trace.ts` records a redacted shape of every tool result; `atrix observe`
+clusters recurring failures and proposes them as incidents.
+
+**Where we deliberately diverge:** the paper deploys validated changes automatically. We propose
+and stop. A change that reaches every repo in the org needs a human, and 5–15% is not worth the
+tail risk of an automated bad rule propagating everywhere.
+
+## 6e. Prompt cache shape is the largest input-cost lever
+
+Cached input costs roughly a tenth of fresh input, and an agent loop re-sends its prefix every
+turn. A representative optimised turn: **67.6k tokens, of which 63k are cached reads at $0.30/M
+and 296 tokens are fresh at $3/M.** Done well this cuts input cost 30–50% with no quality change.
+
+The catch is that a hit requires the prefix to be **byte-identical**, not equivalent. So the rule
+is: front-load everything stable, append only the fresh delta, and keep serialisation
+deterministic — stable tool order, stable JSON key order, stable instruction block order, and no
+timestamps or trace ids anywhere in the stable region.
+
+**What we took:** `core/rules/cache-shape.md`, plus a test asserting two consecutive `atrix build`
+runs are byte-identical. That test is not tidiness; a single timestamp in the generated bundle
+would cost a full uncached prefix on every turn for everyone who installs it.
+
+## 6f. Evals must resist being gamed
+
+*SpecBench* (arXiv 2605.21384) measures reward hacking in long-horizon coding agents. The observed
+behaviours are specific and familiar: **weakening tests, special-casing known inputs, deleting
+assertions, and manipulating outputs to match expectations** without solving anything.
+
+Its recommendations shape how `evals/` must be built: generate novel test cases rather than reusing
+seen ones, keep core assertions immutable and separate from modifiable code, **monitor the agent's
+modifications to the test infrastructure itself**, and combine pass rate with code-quality and
+modification-pattern signals rather than trusting pass rate alone.
+
+**What we took:** a design constraint recorded before writing the eval suite — an eval an agent can
+edit is an eval that measures nothing. This is why `verify-before-done` demands real command output
+as evidence, and why the `evaluator` role is forbidden from grading its own work.
+
 ## 7. Control flow belongs in code, not in a context window
 
 *LLM-as-Code / Agentic Programming* (arXiv 2606.15874) inverts the usual arrangement: the program
@@ -207,4 +295,10 @@ The six patterns become `core/playbooks/` in phase 5.
 - [Harness-Bench (arXiv 2605.27922)](https://arxiv.org/html/2605.27922v1)
 - [Anthropic — Skill authoring best practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices)
 - [Code graph MCP tools compared](https://www.saurabhsharma.dev/blogs/code-graph-mcp-tools-comparison/)
+- [DeepSeek Harness, dissected](https://memo.d.foundation/deepseek-harness-architecture)
+- [DeepSeek Harness technical deep-dive](https://dlcmh.github.io/deepseek-harness)
+- [Agentic Harness Engineering: Observability-Driven Automatic Evolution (arXiv 2604.25850)](https://arxiv.org/pdf/2604.25850)
+- [SpecBench: Measuring Reward Hacking in Long-Horizon Coding Agents (arXiv 2605.21384)](https://arxiv.org/pdf/2605.21384)
+- [The 2026 Caching Playbook for Agents](https://galileo.ai/blog/the-2026-caching-playbook-for-agents-bigger-prompts-smaller-bills)
+- [Same Harness, Different Brain (DeepClaude)](https://medium.com/@arthurpro/same-harness-different-brain-c14f4aa8ff57)
 - [Orca (Stably AI)](https://github.com/stablyai/orca)

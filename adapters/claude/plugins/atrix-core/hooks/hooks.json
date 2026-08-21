@@ -11,6 +11,17 @@
       ]
     }
   ],
+  "PostToolUse": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bun run \"${CLAUDE_PLUGIN_ROOT}/hooks/record-trace.ts\"",
+          "timeout": 5
+        }
+      ]
+    }
+  ],
   "SessionStart": [
     {
       "hooks": [

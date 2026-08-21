@@ -7,9 +7,11 @@ patterns that every Atrix engineer's agent starts from, whichever agent that is.
 compiles it into native packaging for Claude Code, Codex, Cursor, Gemini and Orca. Adding a new
 agent is an adapter, not a rewrite.
 
-**It compounds.** When someone hits a problem, `atrix learn` captures it. Distilled, reviewed and
-merged, it becomes a rule everyone gets. Every rule carries the incident that produced it — and
-rules that stop mattering get pruned. A harness that only grows is a harness that rots.
+**It compounds.** The harness watches itself work: a hook records a redacted shape of every tool
+result, and `atrix observe` surfaces failures that keep recurring. Those, plus anything a human
+flags with `atrix learn`, get distilled, reviewed and merged into rules everyone gets. Every rule
+carries the incident that produced it — and rules that stop mattering get pruned. A harness that
+only grows is a harness that rots.
 
 ---
 
@@ -58,6 +60,7 @@ atrix init      # writes AGENTS.md, CLAUDE.md, .atrix/config.json
 | `atrix doctor` | Check everything is wired up |
 | `atrix lint` | Check skills against the authoring rules |
 | `atrix index` | Build this repo's code graph |
+| `atrix observe` | Mine the local trace for recurring failure patterns |
 | `atrix learn "<what bit you>"` | Capture an incident — the start of the loop |
 | `atrix distill [id]` | Turn an incident into a reviewable change |
 

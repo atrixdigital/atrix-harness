@@ -82,6 +82,9 @@ function buildHooks(harnessRoot: string, pluginDir: string): void {
         PreToolUse: [
           { matcher: 'Bash', hooks: [{ type: 'command', command: run('guard-destructive.ts'), timeout: 5 }] },
         ],
+        // Records a normalised, redacted shape of each tool result so `atrix observe`
+        // can find recurring failures. See the privacy note in the hook itself.
+        PostToolUse: [{ hooks: [{ type: 'command', command: run('record-trace.ts'), timeout: 5 }] }],
         SessionStart: [{ hooks: [{ type: 'command', command: run('session-context.ts'), timeout: 5 }] }],
       },
       null,

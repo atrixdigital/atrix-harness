@@ -34,9 +34,22 @@ adapter can emit it.
 ## The learning loop
 
 ```
- incident ──► candidate ──► PR review ──► merge ──► propagate ──► prune
- atrix learn  atrix distill   human        tag      atrix sync    evals
+ trace ──────┐
+ atrix observe│
+              ├─► incident ──► candidate ──► PR review ──► merge ──► propagate ──► prune
+ a human ─────┘   atrix learn  atrix distill   human       tag      atrix sync    evals
+ noticing
 ```
+
+The loop has **two inputs**, and the second one is the important one. A human noticing catches the
+failures people register; it misses the ones they absorb — and someone who has hit the same failure
+eleven times stopped noticing at the fourth. A `PostToolUse` hook records a redacted shape of every
+tool result to `.atrix/trace.jsonl`, and `atrix observe` clusters recurring failures into
+candidates. Observability-driven harness evolution reports 5–15% gains over intuition-driven
+(RESEARCH.md §6d).
+
+`observe` proposes and stops. It never writes an incident — automatic capture fills the loop with
+churn nobody triages, and a rule reaching every repo in the org needs a human.
 
 1. **Capture** (`atrix learn`) — writes `learning/incidents/incident-NNNN-*.md`. Raw and specific.
 2. **Distill** (`atrix distill`, phase 2) — turns an incident into a concrete proposed diff, with
@@ -127,6 +140,12 @@ rule into an actual stop — it escalates destructive and outward-facing shell c
 It is deliberately `ask`, never auto-deny: a guard that blocks legitimate work gets switched off
 within a week, which is strictly worse than no guard. Its false-positive tests are as load-bearing
 as its true-positive ones.
+
+**The trace is redacted by construction, not by policy.** It records the tool name, the *program*
+a shell call invoked (`psql`, never the query), and an error signature with paths, hostnames,
+numbers, quoted strings and hex stripped — plus the date, not the time. Its redaction tests are the
+first ones in that file, because a regression there does not degrade a feature, it leaks. `.atrix/`
+is gitignored by `atrix init` regardless.
 
 **Success is silent, failure is verbose.** See `packages/cli/src/lib/log.ts`. A harness that
 narrates every success trains people to ignore it.

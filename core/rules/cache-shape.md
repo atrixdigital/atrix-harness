@@ -1,0 +1,46 @@
+---
+name: cache-shape
+description: Keeping the stable part of a prompt byte-identical so it rides the prompt cache — the largest input-cost lever available.
+source: research-caching-2026
+applies: [**]
+---
+
+Prompt caching charges cached input at roughly a tenth of fresh input. On an agent loop the
+prefix is re-sent every turn, so whether it *hits* is the difference between paying once and
+paying fifteen times.
+
+A representative optimised turn: **67.6k tokens, of which 63k are cached reads at $0.30/M and
+296 tokens are fresh at $3/M.** Done well this cuts input cost 30–50% with no quality change.
+
+## The rule
+
+**Front-load everything stable. Append only the fresh delta.**
+
+Ordering, from the top of the context down:
+
+1. System prompt, rules, methodology — changes across releases, not turns.
+2. Tool definitions and skill metadata.
+3. Repo-level context.
+4. Conversation history.
+5. The current request.
+
+Anything that changes per turn placed above something that does not **invalidates the cache for
+everything below it**, and you pay full price for the whole prefix.
+
+## Cache stability is byte-level
+
+A hit requires the prefix to be *identical*, not equivalent. So generated context must be
+deterministic:
+
+- Stable tool order, stable skill listing order, stable instruction block order.
+- Stable JSON key order and stable formatting.
+- **No timestamps, trace ids, randomised examples, or "files changed since" blocks in the stable
+  region.** These are the usual culprits: each one silently costs a full re-read every turn.
+
+If something genuinely must vary per turn, it belongs at the end, below everything stable.
+
+## In this repo
+
+`atrix build` emits rules sorted by name and JSON with fixed key order, and a test asserts two
+consecutive builds are byte-identical. That is not tidiness — it is what makes the generated
+bundle cacheable by whatever runtime loads it.

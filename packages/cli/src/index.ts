@@ -6,6 +6,7 @@ import { runIndex } from './commands/index-repo.ts';
 import { init } from './commands/init.ts';
 import { learn } from './commands/learn.ts';
 import { lint } from './commands/lint.ts';
+import { observe } from './commands/observe.ts';
 import { AtrixError, bold, cyan, dim, log } from './lib/log.ts';
 import { findHarnessRoot, findProjectRoot } from './lib/paths.ts';
 
@@ -19,6 +20,7 @@ ${bold('Commands')}
   ${cyan('init')}               Scaffold the current repository to use the harness
   ${cyan('doctor')}             Check the harness is wired up correctly
   ${cyan('lint')}               Check skills against the authoring rules
+  ${cyan('observe')}            Mine the local trace for recurring failure patterns
   ${cyan('learn')} <title>      Capture an incident — the start of the learning loop
   ${cyan('distill')} [id]       Turn an incident into a proposed change; lists pending if no id
   ${cyan('index')}              Build the code graph for this repository
@@ -75,6 +77,10 @@ async function main(argv: string[]): Promise<number> {
       learn(harnessRoot, title, new Date().toISOString().slice(0, 10));
       return 0;
     }
+
+    case 'observe':
+      observe(projectRoot);
+      return 0;
 
     case 'distill':
       distill(harnessRoot, rest[0]);
