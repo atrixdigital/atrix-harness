@@ -120,6 +120,9 @@ function buildClaude(harnessRoot: string, core: CoreSet, agentsMd: string): numb
   write(join(coreDir, 'AGENTS.md'), renderRuleBundle(core, agentsMd));
   buildHooks(harnessRoot, coreDir);
 
+  const commandsSrc = join(harnessRoot, 'core', 'commands');
+  if (existsSync(commandsSrc)) cpSync(commandsSrc, join(coreDir, 'commands'), { recursive: true });
+
   for (const role of core.roles) {
     const fm: string[] = [`name: ${role.meta.name}`, `description: ${role.meta.description}`];
     if (role.meta.model !== 'inherit') fm.push(`model: ${role.meta.model}`);

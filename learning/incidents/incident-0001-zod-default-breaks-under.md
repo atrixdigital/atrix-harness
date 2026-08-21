@@ -2,7 +2,7 @@
 id: incident-0001
 title: zod .default() breaks under exactOptionalPropertyTypes
 date: 2026-08-20
-status: captured
+status: merged
 cost: 15m
 ---
 

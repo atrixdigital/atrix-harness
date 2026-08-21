@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import { build } from './commands/build.ts';
+import { distill } from './commands/distill.ts';
 import { doctor } from './commands/doctor.ts';
 import { init } from './commands/init.ts';
 import { learn } from './commands/learn.ts';
@@ -16,7 +17,7 @@ ${bold('Commands')}
   ${cyan('init')}               Scaffold the current repository to use the harness
   ${cyan('doctor')}             Check the harness is wired up correctly
   ${cyan('learn')} <title>      Capture an incident — the start of the learning loop
-  ${cyan('distill')} <id>       Turn an incident into a proposed change      ${dim('(phase 2)')}
+  ${cyan('distill')} [id]       Turn an incident into a proposed change; lists pending if no id
   ${cyan('index')}              Build the code graph for this repository     ${dim('(phase 3)')}
   ${cyan('sync')}               Pull the latest org-wide source graph        ${dim('(phase 6)')}
   ${cyan('eval')}               Run the harness eval suite                   ${dim('(phase 7)')}
@@ -70,7 +71,8 @@ async function main(argv: string[]): Promise<number> {
     }
 
     case 'distill':
-      return notYet('distill', 'phase 2');
+      distill(harnessRoot, rest[0]);
+      return 0;
     case 'index':
       return notYet('index', 'phase 3');
     case 'sync':

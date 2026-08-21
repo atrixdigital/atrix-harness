@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadCore } from '../lib/core.ts';
+import { danglingProvenance, listIncidents } from '../lib/incidents.ts';
 import { log } from '../lib/log.ts';
 import { harnessPaths } from '../lib/paths.ts';
 
@@ -48,6 +49,28 @@ export function doctor(harnessRoot: string, projectRoot: string): boolean {
         : `${core.issues.length} problem(s)`,
   });
 
+  const { incidents, issues: incidentIssues } = listIncidents(harnessRoot);
+  checks.push({
+    name: 'incidents validate',
+    ok: incidentIssues.length === 0,
+    detail:
+      incidentIssues.length === 0
+        ? `${incidents.length} incident(s)`
+        : `${incidentIssues.length} problem(s)`,
+  });
+
+  // The provenance invariant is only real if the citation resolves. A rule pointing at
+  // an incident nobody can read is the same as a rule with no justification at all.
+  const dangling = danglingProvenance(
+    harnessRoot,
+    [...core.rules, ...core.methodology].map((d) => ({ path: d.path, source: d.meta.source })),
+  );
+  checks.push({
+    name: 'rule provenance resolves',
+    ok: dangling.length === 0,
+    detail: dangling.length === 0 ? undefined : `${dangling.length} dangling citation(s)`,
+  });
+
   const adaptersBuilt = existsSync(join(p.adapters, 'claude', '.claude-plugin', 'marketplace.json'));
   checks.push({
     name: 'adapters built',
@@ -81,10 +104,15 @@ export function doctor(harnessRoot: string, projectRoot: string): boolean {
     else log.fail(`${check.name}${check.detail ? ` — ${check.detail}` : ''}`);
   }
 
-  if (core.issues.length > 0) {
+  const problems = [
+    ...core.issues.map((i) => `${i.path} — ${i.message}`),
+    ...incidentIssues,
+    ...dangling,
+  ];
+  if (problems.length > 0) {
     log.blank();
-    log.fail('core/ problems:');
-    for (const issue of core.issues) log.detail(`${issue.path} — ${issue.message}`);
+    log.fail('problems:');
+    for (const problem of problems) log.detail(problem);
   }
 
   const failed = checks.filter((c) => !c.ok);
