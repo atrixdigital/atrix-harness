@@ -86,6 +86,43 @@ dependency/impact, information, and org-wide source.
 noncommercial-licensed. Wrapping them is a real supply-chain bet. It is reversible — the wrapper
 is ours — but it is a bet.
 
+## 4b. Harness-Bench: what agents actually fail at
+
+The most directly actionable study (arXiv 2605.27922). Task conditions were fixed — prompts,
+sandbox, budgets, timeouts, evaluators — while the harness was varied across **5,194 trajectories**
+(6 harnesses × 8 model backends × 106 tasks in 8 workflow categories).
+
+**The spread on identical tasks: 76.2% down to 52.4% — 23.8 points, from the harness alone.**
+
+More turns did not mean better results. The top harness scored 76.2% using 68.7k tokens over 7.3
+turns; a mid-table one scored 71.2% using 139.7k tokens over 22.6 turns. Twice the tokens, three
+times the turns, worse outcome.
+
+### The failure taxonomy
+
+Among failed trajectories:
+
+| Failure mode | Share |
+|---|---|
+| **Output/format contract violations** | **36.4%** |
+| Tool errors without effective recovery | 24.6% |
+| Incomplete evidence grounding | 14.6% |
+| Missing artifact commitment | 11.1% |
+| Failure to preserve state continuity | 9.3% |
+
+The paper's framing is the important part: these are **not reasoning errors**. They are *execution
+drift* — "points where model reasoning becomes weakly coupled to the files, tools, evidence, state,
+or output contracts."
+
+Stronger models showed lower cross-harness variance. Harness quality matters most for weaker models
+— which is an argument for the harness getting *better* as you move down the model tiers, not worse.
+
+**What we took:** `core/rules/execution-contract.md` addresses four of the five directly, and the
+first two bullets of `AGENTS.md`'s "Before you finish" are now the output contract and artifact
+commitment — the 36.4% and the 11.1%. Recovery (24.6%) was already `bounded-recovery`. This is the
+single highest-value piece of evidence found so far, because it reallocates effort away from
+reasoning quality and toward execution legibility.
+
 ## 5. Self-evaluation does not work
 
 Models confidently praise their own mediocre output. Anthropic's harness work found the separation
@@ -109,6 +146,28 @@ work; and `core/rules/verify-before-done.md` requires real command output as evi
 
 **What we took:** file-based handoffs in the playbooks, a tool budget per role, and the 60-line cap
 on the entry manual.
+
+## 6b. Skills: the description is the whole discovery mechanism
+
+At startup only each skill's name and description are loaded — roughly 100 tokens per skill. The
+body (target: under 5,000 tokens, hard guidance under 500 lines) loads only when the description
+matches, and bundled references load only when linked from the body. That is what allows 50+ skills
+with no cost to unrelated tasks.
+
+Consequences we enforce mechanically in `atrix lint`:
+
+- **The description is a routing rule, not a summary.** It must say *when* to fire, in the words
+  people actually use. A description that only says what the skill does will not be selected.
+- **Third person, always.** It is injected into the system prompt; "I can help you…" degrades
+  discovery.
+- **References exactly one level deep.** Nested references get *partially* read — the agent
+  silently proceeds on truncated information, which is worse than not reading them at all.
+- **Reference files over ~100 lines need a table of contents**, so a partial read still reveals
+  the scope.
+- **Build evaluations before writing the skill.** Measure the failure without it first, or you are
+  documenting imagined problems.
+
+The linter found two real defects in this repo's own first skill on its first run.
 
 ## 7. Control flow belongs in code, not in a context window
 
@@ -145,4 +204,7 @@ The six patterns become `core/playbooks/` in phase 5.
 - [Code Intelligence Tools for AI Agents Compared — Ry Walker](https://rywalker.com/research/code-intelligence-tools)
 - [codegraph: pre-indexed knowledge graph for coding agents](https://agentconn.com/blog/codegraph-pre-indexed-knowledge-graph-multi-agent-claude-code-codex-2026/)
 - [Graphs vs. Loops: the 2026 orchestration debate](https://explainx.ai/blog/graphs-vs-loops-agentic-ai-debate-linear-andrew-ng-2026)
+- [Harness-Bench (arXiv 2605.27922)](https://arxiv.org/html/2605.27922v1)
+- [Anthropic — Skill authoring best practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices)
+- [Code graph MCP tools compared](https://www.saurabhsharma.dev/blogs/code-graph-mcp-tools-comparison/)
 - [Orca (Stably AI)](https://github.com/stablyai/orca)

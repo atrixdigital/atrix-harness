@@ -15,10 +15,23 @@ const slug = z
   .min(1)
   .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'must be kebab-case');
 
-/** Provenance: a rule that cannot name what went wrong does not belong. */
+/**
+ * Provenance: a rule that cannot name where it came from does not belong.
+ *
+ *   incident-NNNN   we hit this ourselves; the write-up is in learning/incidents/
+ *   research-<ref>  published evidence, cited in docs/RESEARCH.md
+ *   founding        the initial set, predating the loop
+ *
+ * `research-` is deliberately distinct from `founding`: a rule justified by someone
+ * else's measurements is a weaker claim than one justified by our own failure, and
+ * the reader is entitled to know which they are looking at.
+ */
 const provenance = z
   .string()
-  .regex(/^(incident-\d{4}|founding)$/, 'must be "incident-NNNN" or "founding"');
+  .regex(
+    /^(incident-\d{4}|research-[a-z0-9][a-z0-9.-]*|founding)$/,
+    'must be "incident-NNNN", "research-<ref>", or "founding"',
+  );
 
 export const ruleSchema = z.object({
   name: slug,
@@ -27,9 +40,19 @@ export const ruleSchema = z.object({
   applies: z.array(z.string()).default(['**']),
 });
 
+/**
+ * Constraints from the official Agent Skills spec, enforced here so a skill that
+ * validates in this repo is one every runtime will accept.
+ */
+export const SKILL_NAME_MAX = 64;
+export const SKILL_DESCRIPTION_MAX = 1024;
+const RESERVED_SKILL_WORDS = /\b(anthropic|claude)\b/i;
+
 export const skillSchema = z.object({
-  name: slug,
-  description: z.string().min(20),
+  name: slug
+    .max(SKILL_NAME_MAX, `must be at most ${SKILL_NAME_MAX} characters`)
+    .refine((n) => !RESERVED_SKILL_WORDS.test(n), 'must not contain the reserved words "anthropic" or "claude"'),
+  description: z.string().min(20).max(SKILL_DESCRIPTION_MAX, `must be at most ${SKILL_DESCRIPTION_MAX} characters`),
   group: z.enum([
     'engineering',
     'methodology',

@@ -4,6 +4,7 @@ import { distill } from './commands/distill.ts';
 import { doctor } from './commands/doctor.ts';
 import { init } from './commands/init.ts';
 import { learn } from './commands/learn.ts';
+import { lint } from './commands/lint.ts';
 import { AtrixError, bold, cyan, dim, log } from './lib/log.ts';
 import { findHarnessRoot, findProjectRoot } from './lib/paths.ts';
 
@@ -16,6 +17,7 @@ ${bold('Commands')}
   ${cyan('build')}              Generate adapters/ for every agent from core/
   ${cyan('init')}               Scaffold the current repository to use the harness
   ${cyan('doctor')}             Check the harness is wired up correctly
+  ${cyan('lint')}               Check skills against the authoring rules
   ${cyan('learn')} <title>      Capture an incident — the start of the learning loop
   ${cyan('distill')} [id]       Turn an incident into a proposed change; lists pending if no id
   ${cyan('index')}              Build the code graph for this repository     ${dim('(phase 3)')}
@@ -60,6 +62,9 @@ async function main(argv: string[]): Promise<number> {
 
     case 'doctor':
       return doctor(harnessRoot, projectRoot) ? 0 : 1;
+
+    case 'lint':
+      return lint(harnessRoot) ? 0 : 1;
 
     case 'learn': {
       const title = rest.join(' ').trim();

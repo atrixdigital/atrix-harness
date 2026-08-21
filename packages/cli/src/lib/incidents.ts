@@ -106,6 +106,6 @@ export function unfilledSections(body: string): string[] {
 export function danglingProvenance(harnessRoot: string, sources: { path: string; source: string }[]): string[] {
   const known = new Set(listIncidents(harnessRoot).incidents.map((i) => i.meta.id));
   return sources
-    .filter((s) => s.source !== 'founding' && !known.has(s.source))
+    .filter((s) => s.source.startsWith('incident-') && !known.has(s.source))
     .map((s) => `${s.path} — cites ${s.source}, which does not exist in learning/incidents/`);
 }

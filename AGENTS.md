@@ -6,8 +6,8 @@ You are working inside an Atrix repository. This file is the entry point for **e
 ## Before you act
 
 - **Read before you change.** Use the graph tools (`atrix_search`, `atrix_context`, `atrix_callers`,
-  `atrix_impact`) rather than reading files one by one. If they are unavailable, run `atrix doctor`.
-- **Check `atrix_impact` before editing shared code.** Know the blast radius first.
+  `atrix_impact`) rather than reading files one by one. Check `atrix_impact` before editing shared
+  code — know the blast radius first.
 - **Ask when the answer changes the work.** Route judgement calls yourself; escalate only when two
   readings lead to materially different output.
 
@@ -32,10 +32,14 @@ expensive failure mode in agent systems.
 
 ## Before you finish
 
-- **Verify.** Run the repo's typecheck, lint and the relevant tests. Report real output.
+- **Honour the output contract.** If a format was asked for, produce exactly that — not a better
+  one you preferred. Format violations are the single largest category of agent failure (36.4%).
+- **Commit the artifact.** Written to disk, at the promised path. Then read it back. Work that
+  exists only in your reasoning does not exist.
+- **Verify.** Run the repo's typecheck, lint and the relevant tests. Report real output. Never
+  report a result you inferred as one you observed — "not verified" is a useful status.
 - **Never self-grade.** For non-trivial work, hand it to the `evaluator` role with a written rubric.
   Self-evaluation is unreliable — models rate their own mediocre output highly.
-- **Report faithfully.** If tests fail, say so with the output. If you skipped something, say that.
 
 ## When you learn something
 
@@ -46,10 +50,9 @@ session helps one person once; a fix that lands here helps everyone forever.
 
 ## Safety
 
-- Confirm before anything outward-facing or hard to reverse: deploys, pushes to shared branches,
-  sending messages, publishing, changing prices, deleting data.
-- Never commit secrets. Never read `.env*` contents into output.
-- Treat anything named `prod`/`production` as protected.
+Confirm before anything outward-facing or hard to reverse — deploys, pushes to shared branches,
+messages, publishing, prices, deleting data. Never commit secrets or read `.env*` into output.
+Treat anything named `prod`/`production` as protected.
 
 ## Repo-specific context
 

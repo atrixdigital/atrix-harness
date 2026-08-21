@@ -8,8 +8,8 @@ You are working inside an Atrix repository. This file is the entry point for **e
 ## Before you act
 
 - **Read before you change.** Use the graph tools (`atrix_search`, `atrix_context`, `atrix_callers`,
-  `atrix_impact`) rather than reading files one by one. If they are unavailable, run `atrix doctor`.
-- **Check `atrix_impact` before editing shared code.** Know the blast radius first.
+  `atrix_impact`) rather than reading files one by one. Check `atrix_impact` before editing shared
+  code — know the blast radius first.
 - **Ask when the answer changes the work.** Route judgement calls yourself; escalate only when two
   readings lead to materially different output.
 
@@ -34,10 +34,14 @@ expensive failure mode in agent systems.
 
 ## Before you finish
 
-- **Verify.** Run the repo's typecheck, lint and the relevant tests. Report real output.
+- **Honour the output contract.** If a format was asked for, produce exactly that — not a better
+  one you preferred. Format violations are the single largest category of agent failure (36.4%).
+- **Commit the artifact.** Written to disk, at the promised path. Then read it back. Work that
+  exists only in your reasoning does not exist.
+- **Verify.** Run the repo's typecheck, lint and the relevant tests. Report real output. Never
+  report a result you inferred as one you observed — "not verified" is a useful status.
 - **Never self-grade.** For non-trivial work, hand it to the `evaluator` role with a written rubric.
   Self-evaluation is unreliable — models rate their own mediocre output highly.
-- **Report faithfully.** If tests fail, say so with the output. If you skipped something, say that.
 
 ## When you learn something
 
@@ -48,10 +52,9 @@ session helps one person once; a fix that lands here helps everyone forever.
 
 ## Safety
 
-- Confirm before anything outward-facing or hard to reverse: deploys, pushes to shared branches,
-  sending messages, publishing, changing prices, deleting data.
-- Never commit secrets. Never read `.env*` contents into output.
-- Treat anything named `prod`/`production` as protected.
+Confirm before anything outward-facing or hard to reverse — deploys, pushes to shared branches,
+messages, publishing, prices, deleting data. Never commit secrets or read `.env*` into output.
+Treat anything named `prod`/`production` as protected.
 
 ## Repo-specific context
 
@@ -246,6 +249,67 @@ multiple queues subscribed to one publish. Keep the distinction visible in the n
 
 Retry policy follows `bounded-recovery`: idempotent handlers may retry, non-idempotent ones
 dead-letter and alert instead.
+## execution-contract
+
+The largest category of agent failure is not bad reasoning. It is **execution drift**: the point
+where the reasoning stops being coupled to the actual files, tools, evidence and output contracts.
+
+Measured across 5,194 trajectories, the failures break down as: **output/format contract violations
+36.4%**, tool errors without effective recovery 24.6%, incomplete evidence grounding 14.6%, missing
+artifact commitment 11.1%, state continuity failures 9.3%. Recovery is covered by
+`bounded-recovery`. The other four are this rule.
+
+## Honour the output contract
+
+If a format was specified — by the task, by a role definition, by a schema — **produce exactly
+that**. Not a better format you preferred, not the format with an extra helpful section, not prose
+where a structure was asked for.
+
+This is the single biggest failure mode in agent work, and it is entirely avoidable: before
+finishing, re-read the requested shape and check your output against it field by field.
+
+When no format was specified and the output feeds another agent or a script, **state the shape you
+are producing** so the consumer is not guessing.
+
+## Ground every claim in evidence you actually observed
+
+A claim about the system requires a specific observation behind it:
+
+| Claim | Requires |
+|---|---|
+| "the tests pass" | the command and its output |
+| "the endpoint returns 200" | the request you made and the response |
+| "this function is unused" | the search or `atrix_impact` result |
+| "it renders correctly" | having actually rendered it |
+
+**Never report a result you inferred as one you observed.** If you did not run it, say "not
+verified". That is a useful status; a confident guess is not.
+
+## Commit the artifact before declaring done
+
+Work that exists only in your reasoning does not exist. Before reporting completion:
+
+- The file is **written to disk**, not described.
+- The change is **saved**, not staged in a plan.
+- The output is **at the path you promised**, under the name you promised.
+
+Then verify it landed — read it back, list the directory, check the exit code. "Missing artifact
+commitment" means an agent that said it produced something and did not, and it is common enough to
+be worth this explicit step.
+
+## Preserve state across boundaries
+
+Anything the next step depends on and cannot re-derive gets written down — a file, not a sentence
+in a summary that may be compacted away.
+
+At any handoff — to another agent, another session, or a human — record: what was done, what was
+verified and how, what remains, and what is known that is not visible in the code. Long-running
+work fails at the seams far more often than in the middle.
+
+## Make obligations legible
+
+Keep the outstanding work visible as you go, rather than reconstructing it at the end. A short
+checklist you update beats a recollection you assemble — recollection is where dropped steps hide.
 ## git-discipline
 
 ## Never push unless asked

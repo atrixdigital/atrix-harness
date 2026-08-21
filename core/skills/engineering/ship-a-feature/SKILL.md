@@ -20,7 +20,7 @@ atrix_impact  <symbol>          # what breaks if you change it
 
 Find the pattern that already exists. **Most features are a fourth instance of something the repo
 does three times already.** Matching that pattern beats inventing a better one — see
-`references/existing-patterns.md`.
+[references/existing-patterns.md](references/existing-patterns.md).
 
 Read the repo's `AGENTS.md` for stack, commands and gotchas.
 
@@ -39,8 +39,8 @@ For anything touching 3+ files, get the plan approved before writing code.
 ## 4. Verify — you run it, not you read it
 
 Typecheck, lint, and the **relevant** tests. Then exercise the actual path: call the endpoint,
-load the page, run the command. See `references/verification.md` for what "relevant" means per
-change type.
+load the page, run the command. See [references/verification.md](references/verification.md) for what
+"relevant" means per change type.
 
 ## 5. Evaluate — hand it to someone who did not write it
 

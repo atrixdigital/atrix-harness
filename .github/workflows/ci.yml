@@ -27,6 +27,11 @@ jobs:
       - name: Doctor
         run: bun run atrix doctor
 
+      # Skills that parse but degrade discovery: missing "use when" triggers,
+      # broken or nested references, oversized bodies.
+      - name: Lint skills
+        run: bun run atrix lint
+
       - name: Adapters are up to date
         run: |
           bun run atrix build

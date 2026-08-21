@@ -29,7 +29,8 @@ export function doctor(harnessRoot: string, projectRoot: string): boolean {
 
   const agentsExists = existsSync(p.agentsMd);
   if (agentsExists) {
-    const lines = readFileSync(p.agentsMd, 'utf8').split('\n').length;
+    // A trailing newline is a line terminator, not an extra line.
+    const lines = readFileSync(p.agentsMd, 'utf8').replace(/\n$/, '').split('\n').length;
     checks.push({
       name: `AGENTS.md within ${AGENTS_MD_MAX_LINES} lines`,
       ok: lines <= AGENTS_MD_MAX_LINES,
