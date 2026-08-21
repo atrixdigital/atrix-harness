@@ -56,9 +56,30 @@ atrix init      # writes AGENTS.md, CLAUDE.md, .atrix/config.json
 | `atrix build` | Regenerate `adapters/` from `core/` |
 | `atrix init` | Scaffold the current repo to use the harness |
 | `atrix doctor` | Check everything is wired up |
+| `atrix lint` | Check skills against the authoring rules |
+| `atrix index` | Build this repo's code graph |
 | `atrix learn "<what bit you>"` | Capture an incident — the start of the loop |
+| `atrix distill [id]` | Turn an incident into a reviewable change |
 
-`distill`, `index`, `sync` and `eval` land in later phases — see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+`sync` and `eval` land in later phases — see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## The code graph
+
+`atrix index` builds a local index of your repo — declarations and the edges between them — and
+`atrix-graphs` serves it over MCP as five tools: `atrix_search`, `atrix_context`, `atrix_callers`,
+`atrix_callees`, `atrix_impact`.
+
+Ask "what breaks if I change this" in one call instead of a dozen file reads:
+
+```
+atrix_impact createBooking
+→ Changing createBooking affects 23 symbols across 11 files.
+  Direct dependents (6): ...
+```
+
+Built on the TypeScript compiler API, so resolution is real rather than heuristic — it follows
+imports, re-exports and generics. 436 files index in under 5 seconds. The index is local and
+gitignored; nothing leaves your machine.
 
 ---
 

@@ -2,6 +2,7 @@
 import { build } from './commands/build.ts';
 import { distill } from './commands/distill.ts';
 import { doctor } from './commands/doctor.ts';
+import { runIndex } from './commands/index-repo.ts';
 import { init } from './commands/init.ts';
 import { learn } from './commands/learn.ts';
 import { lint } from './commands/lint.ts';
@@ -20,7 +21,7 @@ ${bold('Commands')}
   ${cyan('lint')}               Check skills against the authoring rules
   ${cyan('learn')} <title>      Capture an incident — the start of the learning loop
   ${cyan('distill')} [id]       Turn an incident into a proposed change; lists pending if no id
-  ${cyan('index')}              Build the code graph for this repository     ${dim('(phase 3)')}
+  ${cyan('index')}              Build the code graph for this repository
   ${cyan('sync')}               Pull the latest org-wide source graph        ${dim('(phase 6)')}
   ${cyan('eval')}               Run the harness eval suite                   ${dim('(phase 7)')}
 
@@ -79,7 +80,8 @@ async function main(argv: string[]): Promise<number> {
       distill(harnessRoot, rest[0]);
       return 0;
     case 'index':
-      return notYet('index', 'phase 3');
+      runIndex(projectRoot);
+      return 0;
     case 'sync':
       return notYet('sync', 'phase 6');
     case 'eval':

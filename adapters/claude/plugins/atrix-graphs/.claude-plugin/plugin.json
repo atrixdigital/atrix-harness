@@ -1,0 +1,9 @@
+{
+  "name": "atrix-graphs",
+  "description": "The Atrix code graph over MCP — search, context, callers, callees and blast-radius impact, answered from a local index instead of file reads.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Atrix"
+  },
+  "mcpServers": "./.mcp.json"
+}

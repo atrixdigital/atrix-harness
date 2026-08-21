@@ -32,6 +32,15 @@
       },
       "category": "productivity",
       "source": "./plugins/atrix-stack"
+    },
+    {
+      "name": "atrix-graphs",
+      "description": "The Atrix code graph over MCP — search, context, callers, callees and blast-radius impact, answered from a local index instead of file reads.",
+      "author": {
+        "name": "Atrix"
+      },
+      "category": "productivity",
+      "source": "./plugins/atrix-graphs"
     }
   ]
 }

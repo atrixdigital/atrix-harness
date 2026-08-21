@@ -3,6 +3,11 @@
   "version": "0.1.0",
   "type": "module",
   "private": true,
-  "bin": { "atrix": "./src/index.ts" },
-  "dependencies": { "zod": "^3.23.8" }
+  "bin": {
+    "atrix": "./src/index.ts"
+  },
+  "dependencies": {
+    "zod": "^3.23.8",
+    "@atrix/graph-core": "workspace:*"
+  }
 }

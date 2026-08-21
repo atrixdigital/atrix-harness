@@ -59,10 +59,35 @@ Zod schema, so `atrix build` and CI both reject a rule that cannot name what wen
 
 | Graph | Status | Approach |
 |---|---|---|
-| Code | phase 3 | **Wrap** proven engines (LSP-over-MCP for symbols, tree-sitter+SQLite for call graph). Saturated category — writing another parser is not where our advantage is. |
+| Code | **done** | **Built** on the TypeScript compiler API + `bun:sqlite`. See the reversal below. |
 | Dependency / impact | phase 6 | **Build.** Workspace packages ↔ migrations ↔ env vars ↔ service-to-service calls. Nothing off-the-shelf models this. |
 | Information | phase 6 | **Build.** Knowledge, handoffs, ADRs and `learning/` itself, as a queryable graph. |
 | Source (org-wide) | phase 6 | **Build the federation.** Nightly CI indexes every `atrixdigital` repo → release artifact → `atrix sync`. Nobody indexes 25 repos locally. |
+
+### Why we built the code graph instead of wrapping one
+
+The original plan was to wrap a proven tree-sitter engine, on the reasoning that the category is
+saturated and writing another parser is not where our advantage lies. A survey of the actual repos
+reversed it: **the authored code across every Atrix repo is ~99% TypeScript** (the Swift is
+CocoaPods, the Python is a venv and one small module).
+
+That changes the trade completely. Tree-sitter buys breadth — 150+ languages — at the cost of
+heuristic resolution: it sees `foo()` but cannot always say *which* `foo`. The TypeScript compiler
+API resolves through imports, re-exports, generics and overloads because it is the same resolver
+the typechecker uses. For a TypeScript monorepo, **correct beats broad** — and it costs no native
+dependency, no solo-maintained pre-1.0 dependency, and no supply-chain bet.
+
+Measured on `ezrov` (436 files): 3,507 symbols and 2,047 edges in **4.7s**, with cross-file edges
+outnumbering same-file ones. The most-depended-on symbol came back as the Kysely `Database`
+interface with 128 dependents — which is exactly right for that codebase.
+
+The seam for other languages is file discovery plus a second extractor writing the same tables.
+Nothing above `packages/graph-core/src/indexer.ts` needs to change.
+
+**Five MCP tools, not twenty-eight.** `atrix_search`, `atrix_context`, `atrix_callers`,
+`atrix_callees`, `atrix_impact`. Models reason better over a small distinct surface, and every tool
+costs description tokens in every session whether used or not. Results render as compact lines
+rather than JSON — roughly half the tokens for the same facts.
 
 Indexes live at `.atrix/graph.db` in each repo and are gitignored — always local, never committed.
 
@@ -77,8 +102,8 @@ explicit decision. Adapters planned for Ollama (local), Voyage and OpenAI.
 | 0 | Spine — `AGENTS.md`, CLI, adapter generator, seed core | **done** |
 | 1 | Core harness — full rule set, roles, hooks, tool budgets | **done** |
 | 2 | Learning loop — `distill`, PR gate, provenance CI | next |
-| 3 | Code graph — MCP wiring, `atrix index`, incremental watch | |
-| 4 | Skill library — template, linter, harvest, write the taxonomy | |
+| 3 | Code graph — indexer, query layer, MCP server | **done** |
+| 4 | Skill library — template, linter, harvest, write the taxonomy | next (linter done) |
 | 5 | Playbooks — the six orchestration patterns, file-based handoffs | |
 | 6 | Remaining graphs — dependency, information, org-wide source | |
 | 7 | Evals, docs, rollout | |
@@ -105,6 +130,11 @@ as its true-positive ones.
 
 **Success is silent, failure is verbose.** See `packages/cli/src/lib/log.ts`. A harness that
 narrates every success trains people to ignore it.
+
+**Generated output must be machine-independent.** `adapters/` is committed and read on machines
+that did not produce it, so `atrix build` refuses to write any file containing a home directory or
+a machine-local temp path. See `learning/incidents/incident-0003`, which is what this check exists
+because of.
 
 **No auto-merge of learned candidates**, and no automatic pushes into team repos. Both are
 deliberate and both are in "out of scope" rather than "not yet".

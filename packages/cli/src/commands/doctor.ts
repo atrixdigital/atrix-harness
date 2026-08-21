@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadCore } from '../lib/core.ts';
 import { danglingProvenance, listIncidents } from '../lib/incidents.ts';
@@ -94,11 +94,13 @@ export function doctor(harnessRoot: string, projectRoot: string): boolean {
 
   const indexPath = join(projectRoot, '.atrix', 'graph.db');
   const indexed = existsSync(indexPath);
-  checks.push({
-    name: 'code graph indexed',
-    ok: indexed,
-    detail: indexed ? indexPath : 'run `atrix index` (phase 3 — not yet implemented)',
-  });
+  let indexDetail = 'run `atrix index`';
+  if (indexed) {
+    const ageHours = (Date.now() - statSync(indexPath).mtimeMs) / 3_600_000;
+    const age = ageHours < 1 ? 'fresh' : ageHours < 24 ? `${Math.floor(ageHours)}h old` : `${Math.floor(ageHours / 24)}d old`;
+    indexDetail = `${age} — impact queries are only as current as this`;
+  }
+  checks.push({ name: 'code graph indexed', ok: indexed, detail: indexDetail });
 
   for (const check of checks) {
     if (check.ok) log.ok(`${check.name}${check.detail ? ` ${'— ' + check.detail}` : ''}`);
@@ -116,8 +118,5 @@ export function doctor(harnessRoot: string, projectRoot: string): boolean {
     for (const problem of problems) log.detail(problem);
   }
 
-  const failed = checks.filter((c) => !c.ok);
-  // The graph index is expected to be absent until phase 3 ships.
-  const blocking = failed.filter((c) => c.name !== 'code graph indexed');
-  return blocking.length === 0;
+  return checks.every((c) => c.ok);
 }
