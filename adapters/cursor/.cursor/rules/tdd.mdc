@@ -1,0 +1,45 @@
+---
+description: Test-driven development as practised here — when it applies, the loop, and what makes a test worth writing.
+globs: **
+---
+
+Write the test first when the behaviour is **specifiable before it is built**: business rules,
+money, parsers, state machines, permissions, anything with edge cases you can enumerate.
+
+Do not force it where the shape is genuinely unknown — exploratory UI, spike work, an integration
+against an API you have not seen respond yet. Explore, then delete the spike, then test-drive the
+real thing.
+
+## The loop
+
+1. **Red** — write the smallest failing test that expresses the next behaviour. Run it. Watch it
+   fail *for the right reason*. A test that passes before the implementation exists is testing
+   nothing.
+2. **Green** — the least code that passes. Ugly is fine here.
+3. **Refactor** — with the test as a net. Now make it read well.
+
+Repeat in small steps. If you are writing more than ~20 lines between green states, the step is
+too big.
+
+## What makes a test worth keeping
+
+- It asserts **behaviour the caller depends on**, not internal structure. Tests coupled to
+  implementation break on every refactor and get deleted in frustration.
+- It has one reason to fail. When it goes red you should know why without reading the diff.
+- Its name says the rule: `refunds a cancellation inside 24h at 50%`, not `test refund 2`.
+
+## What not to test
+
+Framework behaviour, third-party libraries, getters, and anything whose failure the typechecker
+already prevents.
+
+## Money, time and permissions
+
+These get tests unconditionally, even when nothing else does. They are where silent bugs cost real
+money and where "it looked right" is least reliable — timezone boundaries, rounding, partial
+refunds, expiry, role escalation.
+
+## Run the relevant tests, not all of them
+
+`atrix_impact` tells you the blast radius; test that set. Full-suite runs are for CI. A local
+loop slow enough to skip is a loop people skip.

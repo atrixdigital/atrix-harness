@@ -1,0 +1,46 @@
+---
+description: How written code should read — naming, comments, structure, and what not to add.
+globs: **
+---
+
+**Write code that reads like the code around it.** Match the surrounding file's naming, comment
+density, error handling and idiom. A technically better pattern that looks foreign is worse than a
+consistent one — the next reader has to hold two conventions in their head.
+
+## Comments
+
+Comment **why**, never **what**. If the code needs a comment to say what it does, rename things
+until it doesn't.
+
+```ts
+// ✗ increment the retry counter
+attempts += 1;
+
+// ✓ Stripe rejects a duplicate idempotency key for 24h, so a same-day retry
+//   must mint a fresh one rather than reusing the original.
+key = mintIdempotencyKey();
+```
+
+Do not add comments to satisfy a quota. Most good code has few.
+
+## What not to add
+
+- **Error handling for impossible states.** A `default:` branch on an exhaustive union that throws
+  "unreachable" is noise. Let the type system carry it.
+- **Defensive checks the caller already made.** Validate at the boundary, trust inside it.
+- **Abstractions with one caller.** Extract on the second use, not in anticipation of it.
+- **New files when an existing one fits.** Prefer editing.
+
+## Structure
+
+- `const` over `let`; never `var`.
+- Destructure imports and props.
+- Validate with Zod at every system boundary — HTTP handlers, queue consumers, env parsing, and
+  anything crossing a process line. Inside the boundary, trust the parsed type.
+- Name things for what they are to the caller, not how they're implemented. `activeMembers` not
+  `filteredUserArrayV2`.
+
+## Scope
+
+Do the task asked. A related bug you notice is a note in your report, not a detour — unless it
+blocks the task, in which case say so and fix the minimum.

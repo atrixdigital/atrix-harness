@@ -1,0 +1,42 @@
+---
+name: edd
+description: Event-driven design — when to reach for events, how to shape them, and the failure modes that make teams regret it.
+source: founding
+applies: [**]
+---
+
+Reach for events when the producer genuinely **should not care** who reacts: a booking is confirmed
+and three unrelated things must happen. Do not reach for them to avoid a function call.
+
+If there is exactly one consumer and it must succeed for the operation to be correct, that is a
+function call wearing a costume. Keep it synchronous.
+
+## Shaping an event
+
+- Name it as a **fact in the past tense**: `BookingConfirmed`, `PaymentFailed`. Not
+  `SendConfirmationEmail` — that is a command, and commands have one intended recipient.
+- Carry **what happened**, plus enough identity to look up the rest. Fat events go stale; thin
+  events cause a thundering herd of lookups. Carry the ids and the values that were true *at that
+  moment* (the amount charged, the price agreed) because those change later.
+- Version from day one. `v1` in the type or the payload. Adding a required field to a live event is
+  a breaking change to every consumer.
+
+## The failure modes
+
+- **At-least-once means duplicates.** Every consumer must be idempotent — key on the event id, or
+  make the effect naturally repeatable. This is not optional; it is the defining property.
+- **Ordering is not guaranteed** across partitions. If two events must be applied in order, they
+  need the same partition key, or the consumer needs to tolerate arriving out of order.
+- **Failure is invisible.** A synchronous call that fails surfaces to the caller. A consumer that
+  fails surfaces nowhere unless you build for it. **Dead-letter queues and alerting on them are
+  part of shipping the feature, not a follow-up.**
+- **Debugging spans processes.** Correlation ids on every event, propagated through every consumer,
+  or you will be reading three log streams by hand.
+
+## In this stack
+
+BullMQ over Redis for job queues. A job is a command with a single owner; an event fan-out is
+multiple queues subscribed to one publish. Keep the distinction visible in the naming.
+
+Retry policy follows `bounded-recovery`: idempotent handlers may retry, non-idempotent ones
+dead-letter and alert instead.

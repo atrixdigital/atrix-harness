@@ -75,8 +75,8 @@ explicit decision. Adapters planned for Ollama (local), Voyage and OpenAI.
 | | | Status |
 |---|---|---|
 | 0 | Spine — `AGENTS.md`, CLI, adapter generator, seed core | **done** |
-| 1 | Core harness — full rule set, roles, hooks, tool budgets | next |
-| 2 | Learning loop — `distill`, PR gate, provenance CI | |
+| 1 | Core harness — full rule set, roles, hooks, tool budgets | **done** |
+| 2 | Learning loop — `distill`, PR gate, provenance CI | next |
 | 3 | Code graph — MCP wiring, `atrix index`, incremental watch | |
 | 4 | Skill library — template, linter, harvest, write the taxonomy | |
 | 5 | Playbooks — the six orchestration patterns, file-based handoffs | |
@@ -89,6 +89,19 @@ Phase 2 is deliberately early: once the loop runs, every later phase feeds itsel
 
 **`AGENTS.md` is capped at 60 lines** and `atrix doctor` fails past it. A manual nobody reads does
 nothing. It is a pilot's checklist, not a style guide.
+
+**The rule bundle has a context budget.** Codex and Gemini load every rule at session start —
+there is no progressive disclosure to fall back on, unlike Claude skills or Cursor's glob-scoped
+rules. `atrix doctor` fails when the generated bundle exceeds ~12,000 tokens (currently ~47% of it).
+
+When that trips, the fix is to **prune or scope rules, not raise the number**. A rule set that
+crowds out the actual work is a harness that has become the problem it was built to solve.
+
+**Enforcement lives in hooks, not prose.** `core/hooks/guard-destructive.ts` turns the `safety`
+rule into an actual stop — it escalates destructive and outward-facing shell commands to the human.
+It is deliberately `ask`, never auto-deny: a guard that blocks legitimate work gets switched off
+within a week, which is strictly worse than no guard. Its false-positive tests are as load-bearing
+as its true-positive ones.
 
 **Success is silent, failure is verbose.** See `packages/cli/src/lib/log.ts`. A harness that
 narrates every success trains people to ignore it.

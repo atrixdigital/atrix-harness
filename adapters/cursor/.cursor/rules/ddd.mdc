@@ -1,0 +1,42 @@
+---
+description: Domain-driven design as applied in Atrix codebases — bounded contexts, the domain model, and when the ceremony is not worth it.
+globs: **
+---
+
+The useful core of DDD is small: **name things the way the business names them, and draw hard
+boundaries between areas that mean different things by the same word.**
+
+## Ubiquitous language
+
+The code says what the domain says. If operations call it a "booking hold", the type is
+`BookingHold` — not `TempReservation`. When the code and the conversation use different words,
+every handoff pays a translation tax and bugs hide in the gap.
+
+If the business has no word for it, that is a signal the concept may not be real.
+
+## Bounded contexts
+
+The same word means different things in different parts of a system. A "user" in billing (has a
+payment method, a tax region) is not a "user" in matching (has interests, a location). **Do not
+build one shared `User` model to serve both** — you get a type with 40 optional fields and no
+invariant that holds anywhere.
+
+Give each context its own model and translate at the boundary. Duplication across contexts is
+correct here; it is not the same concept.
+
+In practice, in this org's stack: a bounded context is usually a service module
+(`services/matching/`, `services/stripe/`) with its own types, and the translation happens at the
+module's public interface.
+
+## Keep invariants in the model
+
+If a booking cannot exist without a venue and a time window, the constructor should not permit one.
+Validation scattered across handlers is validation that will be forgotten in the fourth handler.
+
+## When to skip the ceremony
+
+Aggregates, repositories, domain events and a full layered architecture are worth it when the
+domain is genuinely complex and long-lived. For a CRUD table with a form on it, they are cost with
+no return.
+
+**The naming and the boundaries are almost always worth it. The machinery usually is not.**

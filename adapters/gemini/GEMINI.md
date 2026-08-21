@@ -90,6 +90,372 @@ Before retrying anything, classify it:
 
 LLM tool calls do not inherit the retry semantics of the classical workflow engines this pattern
 came from. Assume nothing is safe to repeat until you have said out loud why it is.
+## code-style
+
+**Write code that reads like the code around it.** Match the surrounding file's naming, comment
+density, error handling and idiom. A technically better pattern that looks foreign is worse than a
+consistent one — the next reader has to hold two conventions in their head.
+
+## Comments
+
+Comment **why**, never **what**. If the code needs a comment to say what it does, rename things
+until it doesn't.
+
+```ts
+// ✗ increment the retry counter
+attempts += 1;
+
+// ✓ Stripe rejects a duplicate idempotency key for 24h, so a same-day retry
+//   must mint a fresh one rather than reusing the original.
+key = mintIdempotencyKey();
+```
+
+Do not add comments to satisfy a quota. Most good code has few.
+
+## What not to add
+
+- **Error handling for impossible states.** A `default:` branch on an exhaustive union that throws
+  "unreachable" is noise. Let the type system carry it.
+- **Defensive checks the caller already made.** Validate at the boundary, trust inside it.
+- **Abstractions with one caller.** Extract on the second use, not in anticipation of it.
+- **New files when an existing one fits.** Prefer editing.
+
+## Structure
+
+- `const` over `let`; never `var`.
+- Destructure imports and props.
+- Validate with Zod at every system boundary — HTTP handlers, queue consumers, env parsing, and
+  anything crossing a process line. Inside the boundary, trust the parsed type.
+- Name things for what they are to the caller, not how they're implemented. `activeMembers` not
+  `filteredUserArrayV2`.
+
+## Scope
+
+Do the task asked. A related bug you notice is a note in your report, not a detour — unless it
+blocks the task, in which case say so and fix the minimum.
+## context-discipline
+
+Context is the scarcest resource in the loop. Spend it on reasoning, not on rediscovery.
+
+## Retrieve just in time
+
+Keep lightweight identifiers — file paths, symbol names, queries — and load the content when you
+need it. Do not front-load a repo into the window "so it's there".
+
+Order: **graph query → grep → targeted read → whole file.** Each step is an order of magnitude more
+expensive than the last. Pre-indexed graphs cut tool calls by roughly 70% precisely because most
+file reads are rediscovering structure an index already holds.
+
+## Offload to the filesystem
+
+Anything you will need later and cannot hold: write it to a file. Notes, intermediate results,
+findings, plans. The filesystem is durable memory that survives compaction and can be handed to
+another agent.
+
+## Hand off through files, not conversation
+
+When one agent's work feeds another's, write a structured artefact and pass the path. File-based
+handoff measurably beats conversational handoff — the handoff point is explicit, and nothing is
+lost to summarisation.
+
+A handoff document names: what was done, what was verified and how, what remains, and what the next
+agent needs to know that isn't in the code.
+
+## Delegate to keep the main window clean
+
+Broad exploration belongs in a subagent that returns conclusions, not file dumps. The lead agent
+should receive an answer, not a transcript.
+
+## Before context runs out
+
+Do not push through a filling window hoping to finish. Write the handoff, then continue fresh.
+Work done in the last 5% of a context window is reliably the worst work in the session.
+## ddd
+
+The useful core of DDD is small: **name things the way the business names them, and draw hard
+boundaries between areas that mean different things by the same word.**
+
+## Ubiquitous language
+
+The code says what the domain says. If operations call it a "booking hold", the type is
+`BookingHold` — not `TempReservation`. When the code and the conversation use different words,
+every handoff pays a translation tax and bugs hide in the gap.
+
+If the business has no word for it, that is a signal the concept may not be real.
+
+## Bounded contexts
+
+The same word means different things in different parts of a system. A "user" in billing (has a
+payment method, a tax region) is not a "user" in matching (has interests, a location). **Do not
+build one shared `User` model to serve both** — you get a type with 40 optional fields and no
+invariant that holds anywhere.
+
+Give each context its own model and translate at the boundary. Duplication across contexts is
+correct here; it is not the same concept.
+
+In practice, in this org's stack: a bounded context is usually a service module
+(`services/matching/`, `services/stripe/`) with its own types, and the translation happens at the
+module's public interface.
+
+## Keep invariants in the model
+
+If a booking cannot exist without a venue and a time window, the constructor should not permit one.
+Validation scattered across handlers is validation that will be forgotten in the fourth handler.
+
+## When to skip the ceremony
+
+Aggregates, repositories, domain events and a full layered architecture are worth it when the
+domain is genuinely complex and long-lived. For a CRUD table with a form on it, they are cost with
+no return.
+
+**The naming and the boundaries are almost always worth it. The machinery usually is not.**
+## edd
+
+Reach for events when the producer genuinely **should not care** who reacts: a booking is confirmed
+and three unrelated things must happen. Do not reach for them to avoid a function call.
+
+If there is exactly one consumer and it must succeed for the operation to be correct, that is a
+function call wearing a costume. Keep it synchronous.
+
+## Shaping an event
+
+- Name it as a **fact in the past tense**: `BookingConfirmed`, `PaymentFailed`. Not
+  `SendConfirmationEmail` — that is a command, and commands have one intended recipient.
+- Carry **what happened**, plus enough identity to look up the rest. Fat events go stale; thin
+  events cause a thundering herd of lookups. Carry the ids and the values that were true *at that
+  moment* (the amount charged, the price agreed) because those change later.
+- Version from day one. `v1` in the type or the payload. Adding a required field to a live event is
+  a breaking change to every consumer.
+
+## The failure modes
+
+- **At-least-once means duplicates.** Every consumer must be idempotent — key on the event id, or
+  make the effect naturally repeatable. This is not optional; it is the defining property.
+- **Ordering is not guaranteed** across partitions. If two events must be applied in order, they
+  need the same partition key, or the consumer needs to tolerate arriving out of order.
+- **Failure is invisible.** A synchronous call that fails surfaces to the caller. A consumer that
+  fails surfaces nowhere unless you build for it. **Dead-letter queues and alerting on them are
+  part of shipping the feature, not a follow-up.**
+- **Debugging spans processes.** Correlation ids on every event, propagated through every consumer,
+  or you will be reading three log streams by hand.
+
+## In this stack
+
+BullMQ over Redis for job queues. A job is a command with a single owner; an event fan-out is
+multiple queues subscribed to one publish. Keep the distinction visible in the naming.
+
+Retry policy follows `bounded-recovery`: idempotent handlers may retry, non-idempotent ones
+dead-letter and alert instead.
+## git-discipline
+
+## Never push unless asked
+
+Commit freely; **push only when the human asks.** Some repos in this org carry standing push holds
+that persist across sessions — if the repo's `AGENTS.md` says so, honour it every time, not once.
+
+If you are on the default branch and about to commit substantial work, branch first.
+
+## Commit messages
+
+Say **why**, not what — the diff already says what.
+
+```
+✗ update booking.ts
+✓ Reject bookings that close past midnight
+
+  The slot generator assumed close > open, so venues open 18:00–02:00
+  produced an empty grid. 18 of 26 live venues were affected.
+```
+
+Subject line in the imperative, under ~70 characters. Body wrapped at ~80, explaining the reasoning
+and anything a reviewer would otherwise have to reconstruct.
+
+Do not list every file changed. Do not pad with "various improvements".
+
+## Commit granularity
+
+One logical change per commit. A refactor and a behaviour change in the same commit cannot be
+reviewed, reverted, or bisected independently.
+
+## Before committing
+
+Run typecheck and the relevant tests. A commit that does not build is a commit that will bisect
+badly six months from now.
+
+## Never
+
+- Amend or rebase commits you did not author in this session.
+- Force-push to a shared branch.
+- Commit generated output that the build produces (`adapters/` here is the exception — it is
+  committed deliberately so consumers can install without a build step, and CI verifies it is
+  current).
+## reporting
+
+## Report the outcome, not the journey
+
+The human wants to know: did it work, what changed, what's left. Not every step you took.
+
+```
+✗ First I looked at the schema, then I realised the migration was stale, so I
+  checked the config, and then I found that actually the issue was...
+✓ Fixed: bookings past midnight returned an empty grid (18/26 venues affected).
+  The slot generator assumed close > open. Verified against 5 venues locally.
+  Not deployed.
+```
+
+## Be exact about state
+
+- **Done and verified** — say so plainly, no hedging. Name what you ran.
+- **Done, not verified** — say which part is unverified and why.
+- **Not done** — say what blocked it. Never let a skipped step pass silently.
+- **Failing** — paste the actual output. A summary of an error is not an error.
+
+Never report completion you have not observed. "Should work" is not a status.
+
+## Partial delivery
+
+If part of the scope is blocked, finish everything else in full and state exactly what you left and
+why. Scaling the work down is the human's call, not yours.
+
+## Corrections
+
+If you said something earlier that was wrong **and it changes what the human should do**, correct
+it in one plain sentence and move on. Combine multiple corrections rather than enumerating them.
+
+If the error changes nothing — a mistyped filename you already fixed — just fix it. Do not narrate.
+
+No apologising, no self-criticism, no tallying past mistakes. Correct it, continue.
+
+## Disagreement
+
+If you think the request is wrong, say so in a sentence or two, then **do the work anyway** under
+stated assumptions. If the human reaffirms after hearing the concern, that is their decision —
+proceed with the full request and stop relitigating.
+## safety
+
+## Confirm first — always
+
+Anything **outward-facing** or **hard to reverse**:
+
+- Deploying, publishing, releasing
+- Pushing to a shared or default branch
+- Sending messages, emails, or anything a third party will receive
+- Changing prices, plans, or anything billing-facing
+- Deleting or overwriting data, branches, or files you did not create
+- Submitting to an app store or review process
+
+Approval in one context does not carry to the next. "Yes, deploy staging" is not "yes, deploy prod".
+
+## Secrets
+
+- Never commit a secret. Never print `.env*` contents into output, a log, or a report.
+- Never send repository contents, credentials, or customer data to an external service.
+- If you need a value from a `.env` file, read the **key names** and ask the human for the value,
+  or reference it by name without resolving it.
+
+## Production
+
+Treat anything carrying `prod` or `production` as a whole word or name segment as protected:
+databases, namespaces, branches, config files, deploy targets.
+
+- Never run a migration against a live database without explicit, specific confirmation.
+- Never use `migrate dev` (or equivalent destructive migration commands) against a hosted database.
+- Prefer a dry run, a diff, or a read-only query first, and show it before acting.
+
+## Before you delete or overwrite
+
+Look at the target first. Read the file, list the directory, check what the branch contains.
+"I assumed it was empty" is not a defence you get to use twice.
+
+## Destructive commands
+
+`rm -rf`, `git reset --hard`, `git push --force`, `DROP`, `TRUNCATE`, `kubectl delete` — state what
+will be lost before running, and get a yes.
+## system-design
+
+## Start from the constraints, not the diagram
+
+Before any boxes and arrows, write down:
+
+- **Scale that actually applies.** Not "what if we're Uber" — what is true in 12 months. Designing
+  for imaginary scale is the most expensive mistake available to a small team.
+- **What must never break.** Money, auth, data loss. These get the conservative choice.
+- **What is allowed to be slow, wrong, or eventually consistent.** Naming this explicitly is what
+  buys you simplicity everywhere else.
+- **Who operates it at 3am.** A design nobody on the team can debug is a bad design regardless of
+  its properties.
+
+## Then the shape
+
+1. **Data first.** Get the model right and most of the system falls out. Get it wrong and no amount
+   of service architecture saves you. Write the schema before the endpoints.
+2. **Boundaries second.** Where does one area stop meaning what another means (see `ddd`)? Those
+   seams are where you can later split a process; everywhere else, don't.
+3. **Failure third.** For each external call: what happens when it times out, returns garbage, or
+   succeeds twice? If you have not answered this, the design is not finished.
+4. **Interfaces last.** Endpoints and UI are the easiest part to change and the least worth
+   agonising over early.
+
+## Bias toward boring
+
+Prefer the thing the team already runs. A second database, a new queue, an extra language — each
+is a permanent operational cost paid by everyone, forever, to solve a problem that usually had a
+duller answer.
+
+**One process until it hurts.** Split when you have a measured reason: independent scaling,
+independent deploy cadence, or a hard isolation requirement. Not because a diagram looked tidier.
+
+## Write it down
+
+Anything with more than one reasonable answer gets a short ADR (`write-adr`). The decision matters
+less than the reader in six months knowing *why*, and what was rejected.
+
+## Then check it
+
+Give the design to someone who did not write it, with the constraints, and ask where it breaks.
+Design review before implementation is the cheapest review there is.
+## tdd
+
+Write the test first when the behaviour is **specifiable before it is built**: business rules,
+money, parsers, state machines, permissions, anything with edge cases you can enumerate.
+
+Do not force it where the shape is genuinely unknown — exploratory UI, spike work, an integration
+against an API you have not seen respond yet. Explore, then delete the spike, then test-drive the
+real thing.
+
+## The loop
+
+1. **Red** — write the smallest failing test that expresses the next behaviour. Run it. Watch it
+   fail *for the right reason*. A test that passes before the implementation exists is testing
+   nothing.
+2. **Green** — the least code that passes. Ugly is fine here.
+3. **Refactor** — with the test as a net. Now make it read well.
+
+Repeat in small steps. If you are writing more than ~20 lines between green states, the step is
+too big.
+
+## What makes a test worth keeping
+
+- It asserts **behaviour the caller depends on**, not internal structure. Tests coupled to
+  implementation break on every refactor and get deleted in frustration.
+- It has one reason to fail. When it goes red you should know why without reading the diff.
+- Its name says the rule: `refunds a cancellation inside 24h at 50%`, not `test refund 2`.
+
+## What not to test
+
+Framework behaviour, third-party libraries, getters, and anything whose failure the typechecker
+already prevents.
+
+## Money, time and permissions
+
+These get tests unconditionally, even when nothing else does. They are where silent bugs cost real
+money and where "it looked right" is least reliable — timezone boundaries, rounding, partial
+refunds, expiry, role escalation.
+
+## Run the relevant tests, not all of them
+
+`atrix_impact` tells you the blast radius; test that set. Full-suite runs are for CI. A local
+loop slow enough to skip is a loop people skip.
 ## tool-discipline
 
 Use the purpose-built tool. Shelling out to do a file operation loses structure, costs tokens,
@@ -167,3 +533,49 @@ difference is stark — self-reviewed work ships with core functionality silentl
 **Report faithfully.** If tests fail, say so and paste the output. If you skipped a step, say which
 and why. If part of the task was blocked, finish everything else and state plainly what is left.
 Never report completion you have not observed.
+## write-adr
+
+An ADR exists so that the person who asks "why on earth is it done this way" in a year gets an
+answer instead of guessing. It is cheap to write and expensive to not have.
+
+## Write one when
+
+- The decision has more than one reasonable answer and you picked one.
+- It will be **expensive to reverse** — a datastore, an auth model, a tenancy strategy, a protocol.
+- Someone will otherwise "fix" it later without knowing what it was solving.
+
+Do **not** write one for choices with an obvious default, or for things the code states plainly.
+
+## Format
+
+Keep it to one page. Longer ADRs do not get read, and an ADR nobody reads is worse than none —
+it creates the illusion of a record.
+
+```markdown
+# ADR-007: Kysely over Prisma for the booking service
+
+Status:   accepted            # proposed | accepted | superseded by ADR-012
+Date:     2026-08-20
+Deciders: <who was in the room>
+
+## Context
+What forces are at play. The constraint, the problem, what we already run.
+
+## Decision
+What we are doing. Present tense, active: "We use X."
+
+## Consequences
+What this makes easy. What it makes hard. What we now have to live with —
+including the bad parts, honestly.
+
+## Alternatives considered
+Each with one line on why it lost. This is the section that gets read.
+```
+
+## Rules
+
+- **Never delete or rewrite an accepted ADR.** Supersede it with a new one and link both. The
+  record of a decision that turned out wrong is more valuable than the tidy version.
+- Record the alternatives honestly, including the one you nearly picked.
+- If the decision came from a specific failure, link the incident. `learning/incidents/` and
+  `docs/adr/` describe the same history from two directions.

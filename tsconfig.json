@@ -22,6 +22,6 @@
       "@atrix/graph-core/*": ["packages/graph-core/src/*"]
     }
   },
-  "include": ["packages/**/*.ts", "evals/**/*.ts"],
+  "include": ["packages/**/*.ts", "core/hooks/**/*.ts", "evals/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

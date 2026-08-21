@@ -36,6 +36,37 @@ function copySkill(harnessRoot: string, skill: Doc<Skill>, destDir: string): voi
   cpSync(srcDir, destDir, { recursive: true });
 }
 
+/**
+ * Copy the portable hook scripts and emit the Claude wiring for them.
+ * The scripts themselves take a JSON payload on stdin, so other agents that
+ * support lifecycle hooks can reuse them without change.
+ */
+function buildHooks(harnessRoot: string, pluginDir: string): void {
+  const src = join(harnessRoot, 'core', 'hooks');
+  if (!existsSync(src)) return;
+
+  const destDir = join(pluginDir, 'hooks');
+  mkdirSync(destDir, { recursive: true });
+  // Tests live beside the hooks they cover; they are not part of the shipped plugin.
+  cpSync(src, destDir, { recursive: true, filter: (from) => !from.endsWith('.test.ts') });
+
+  const run = (script: string) => `bun run "\${CLAUDE_PLUGIN_ROOT}/hooks/${script}"`;
+
+  write(
+    join(destDir, 'hooks.json'),
+    JSON.stringify(
+      {
+        PreToolUse: [
+          { matcher: 'Bash', hooks: [{ type: 'command', command: run('guard-destructive.ts'), timeout: 5 }] },
+        ],
+        SessionStart: [{ hooks: [{ type: 'command', command: run('session-context.ts'), timeout: 5 }] }],
+      },
+      null,
+      2,
+    ),
+  );
+}
+
 function buildClaude(harnessRoot: string, core: CoreSet, agentsMd: string): number {
   const out = join(harnessPaths(harnessRoot).adapters, 'claude');
   rmSync(out, { recursive: true, force: true });
@@ -74,14 +105,20 @@ function buildClaude(harnessRoot: string, core: CoreSet, agentsMd: string): numb
   );
 
   for (const p of plugins) {
-    write(
-      join(out, 'plugins', p.name, '.claude-plugin', 'plugin.json'),
-      JSON.stringify({ name: p.name, description: p.description, version: '0.1.0', author: { name: 'Atrix' } }, null, 2),
-    );
+    const manifest: Record<string, unknown> = {
+      name: p.name,
+      description: p.description,
+      version: '0.1.0',
+      author: { name: 'Atrix' },
+    };
+    // Only atrix-core carries enforcement; the skill plugins are content only.
+    if (p.name === 'atrix-core') manifest['hooks'] = './hooks/hooks.json';
+    write(join(out, 'plugins', p.name, '.claude-plugin', 'plugin.json'), JSON.stringify(manifest, null, 2));
   }
 
   const coreDir = join(out, 'plugins', 'atrix-core');
   write(join(coreDir, 'AGENTS.md'), renderRuleBundle(core, agentsMd));
+  buildHooks(harnessRoot, coreDir);
 
   for (const role of core.roles) {
     const fm: string[] = [`name: ${role.meta.name}`, `description: ${role.meta.description}`];

@@ -7,6 +7,13 @@ import { harnessPaths } from '../lib/paths.ts';
 /** Upper bound on AGENTS.md. A manual nobody reads is a manual that does nothing. */
 const AGENTS_MD_MAX_LINES = 60;
 
+/**
+ * Codex and Gemini load the whole rule bundle every session — there is no progressive
+ * disclosure to fall back on. This budget is what stops the rule set growing until it
+ * crowds out the work. When it trips, prune or scope rules; do not raise the number.
+ */
+const BUNDLE_TOKEN_BUDGET = 12_000;
+
 interface Check {
   name: string;
   ok: boolean;
@@ -47,6 +54,19 @@ export function doctor(harnessRoot: string, projectRoot: string): boolean {
     ok: adaptersBuilt,
     detail: adaptersBuilt ? undefined : 'run `atrix build`',
   });
+
+  const bundlePath = join(p.adapters, 'codex', 'AGENTS.md');
+  if (existsSync(bundlePath)) {
+    // Word count × 4/3 is a rough but stable proxy; precision is not the point, the trend is.
+    const words = readFileSync(bundlePath, 'utf8').split(/\s+/).filter((w) => w !== '').length;
+    const tokens = Math.round((words * 4) / 3);
+    const pct = Math.round((tokens / BUNDLE_TOKEN_BUDGET) * 100);
+    checks.push({
+      name: 'rule bundle within context budget',
+      ok: tokens <= BUNDLE_TOKEN_BUDGET,
+      detail: `~${tokens.toLocaleString()} tokens, ${pct}% of ${BUNDLE_TOKEN_BUDGET.toLocaleString()}`,
+    });
+  }
 
   const indexPath = join(projectRoot, '.atrix', 'graph.db');
   const indexed = existsSync(indexPath);
