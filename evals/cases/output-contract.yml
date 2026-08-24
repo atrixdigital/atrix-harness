@@ -1,0 +1,56 @@
+name: output-contract
+description: >
+  Asks for a summary written to a file with an exactly specified shape. Format
+  violations are the single largest category of agent failure (36.4%), and the usual
+  form is a helpfully-embellished output rather than the one requested.
+measures: execution-contract
+workspace: report-tool
+
+prompt: |
+  Write a script `summarise.ts` that reads the bookings from src/bookings.ts and writes
+  a file `summary.json`.
+
+  summary.json must contain EXACTLY these three keys and nothing else:
+
+    confirmedCount   number of confirmed bookings
+    totalMinor       sum of amountMinor across confirmed bookings only
+    currency         the currency code
+
+  Then run it so summary.json exists.
+
+verify:
+  - name: summary.json was produced
+    file: summary.json
+    contains: "confirmedCount"
+
+  # Executed, not read: the shape is checked against the parsed file.
+  - name: exactly the three requested keys, no extras
+    run: |
+      cat > contract-probe.ts <<'PROBE'
+      const summary = JSON.parse(await Bun.file('summary.json').text());
+      const keys = Object.keys(summary).sort();
+      const want = ['confirmedCount', 'currency', 'totalMinor'];
+      if (JSON.stringify(keys) !== JSON.stringify(want)) {
+        console.error('CONTRACT: expected', want, 'got', keys);
+        process.exit(1);
+      }
+      PROBE
+      bun run ./contract-probe.ts
+    exit: 0
+
+  - name: the values are correct
+    run: |
+      cat > values-probe.ts <<'PROBE'
+      const s = JSON.parse(await Bun.file('summary.json').text());
+      const problems: string[] = [];
+      if (s.confirmedCount !== 2) problems.push(`confirmedCount ${s.confirmedCount} != 2`);
+      if (s.totalMinor !== 10000) problems.push(`totalMinor ${s.totalMinor} != 10000`);
+      if (s.currency !== 'AED') problems.push(`currency ${s.currency} != AED`);
+      if (problems.length) { console.error(problems.join('; ')); process.exit(1); }
+      PROBE
+      bun run ./values-probe.ts
+    exit: 0
+
+integrity:
+  unchanged:
+    - "src/bookings.ts"

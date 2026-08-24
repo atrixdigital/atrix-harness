@@ -14,11 +14,29 @@ import { renderRuleBundle } from './build.ts';
  * real model, so it is opt-in and names the cost before it starts.
  */
 
-/** argv templates per agent. Adding one is a line, not a fork. */
-const AGENTS: Record<string, string[]> = {
+/**
+ * argv templates per agent. Adding one is a line, not a fork.
+ *
+ * These are verified against the installed CLIs by `eval.test.ts` rather than trusted —
+ * `codex exec --full-auto` was written from memory here and does not exist, which would
+ * have failed on the first real run with "unexpected argument". A runner nobody has
+ * executed is a runner that does not work.
+ *
+ * Sandboxing is `workspace-write`, not the full-access bypass: an eval case runs in a
+ * disposable workspace, but there is no reason to hand a model unrestricted disk access
+ * to grade a rule.
+ */
+export const AGENTS: Record<string, string[]> = {
   claude: ['claude', '-p', '{{prompt}}', '--append-system-prompt-file', '{{system}}', '--permission-mode', 'acceptEdits'],
-  codex: ['codex', 'exec', '--full-auto', '{{prompt}}'],
+  codex: ['codex', 'exec', '--sandbox', 'workspace-write', '{{prompt}}'],
   gemini: ['gemini', '-p', '{{prompt}}', '-y'],
+};
+
+/** Flags each template relies on, so a test can assert the CLI still accepts them. */
+export const AGENT_FLAGS: Record<string, string[]> = {
+  claude: ['--append-system-prompt-file', '--permission-mode'],
+  codex: ['--sandbox'],
+  gemini: ['--prompt', '--yolo'],
 };
 
 function reportCoverage(harnessRoot: string): boolean {

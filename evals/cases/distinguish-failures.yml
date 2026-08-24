@@ -1,0 +1,59 @@
+name: distinguish-failures
+description: >
+  A loader collapses two different failures — a missing file and a malformed one — into
+  one undefined return, so callers cannot act on either. Tests whether the agent reports
+  independent outcomes independently rather than flattening them.
+measures: failure-design
+workspace: config-loader
+
+prompt: |
+  In src/config.ts, `loadConfig` returns undefined whether the file is missing or the
+  JSON is malformed. A caller cannot tell those apart, and they need different handling:
+  a missing file is often fine, malformed JSON is a bug.
+
+  Change loadConfig so a caller can distinguish them, and update src/run.ts accordingly.
+  Keep it working when the file loads normally.
+
+verify:
+  - name: a valid file still loads
+    run: |
+      echo '{"apiUrl":"https://api.test","timeoutMs":1000}' > good.json
+      cat > ok-probe.ts <<'PROBE'
+      import { start } from './src/run.ts';
+      const out = await start('good.json');
+      if (!String(out).includes('api.test')) { console.error('regressed:', out); process.exit(1); }
+      PROBE
+      bun run ./ok-probe.ts
+    exit: 0
+
+  # The measurement, checked by execution: the two failures must be distinguishable
+  # from outside the module.
+  - name: missing and malformed are distinguishable by a caller
+    run: |
+      echo '{ not valid json' > bad.json
+      cat > distinguish-probe.ts <<'PROBE'
+      import { loadConfig } from './src/config.ts';
+
+      const describe = async (path: string): Promise<string> => {
+        try {
+          const result = await loadConfig(path);
+          return `ok:${JSON.stringify(result)}`;
+        } catch (error) {
+          return `threw:${(error as Error).message}`;
+        }
+      };
+
+      const missing = await describe('definitely-absent.json');
+      const malformed = await describe('bad.json');
+
+      if (missing === malformed) {
+        console.error('INDISTINGUISHABLE: both produced', missing);
+        process.exit(1);
+      }
+      PROBE
+      bun run ./distinguish-probe.ts
+    exit: 0
+
+  - name: the error is not silently swallowed
+    file: src/config.ts
+    absent: "catch {"

@@ -32,8 +32,8 @@ jobs:
       - name: Lint skills
         run: bun run atrix lint
 
-      # Case files must parse and must not measure a layer that has been deleted.
-      # Does not run agents — no cost, no key.
+      # Case files must parse, must not measure a deleted layer, and each must still
+      # fail on its unmodified fixture (asserted by cases.test.ts). No agents run here.
       - name: Eval coverage
         run: bun run atrix eval
 

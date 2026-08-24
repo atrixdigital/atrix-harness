@@ -120,14 +120,16 @@ evals/         measures which harness layers still earn their place
 
 ## Contributing
 
-**Rule or skill?** Rules load in every session forever; skills load only when relevant. If a
-practice applies to every task, it is a rule. If it applies when doing one *kind* of task —
-designing an API, running a migration, writing a form — it is a skill. When in doubt, skill.
+Read **[CONTRIBUTING.md](CONTRIBUTING.md)** — most of it is about what *not* to add.
 
-Add a rule only when you can name the incident behind it — CI enforces the `source:` field — and
-give it an `expires_when` if you can say what would make it obsolete.
+The short version: edit `core/`, never `adapters/`. A practice that applies to every task is a
+rule; one that applies to a kind of task is a skill; one that applies to a single repo belongs in
+that repo. Every rule names the incident behind it, and CI enforces that the citation resolves.
 
-Edit `core/`, never `adapters/`. Run `atrix build && atrix lint && bun test && bun run typecheck`
-before opening a PR.
+```bash
+bun run atrix build && bun run atrix doctor && bun run atrix lint && bun run atrix eval
+bun test && bun x tsc --noEmit
+```
 
 Why any of this is shaped the way it is: [docs/RESEARCH.md](docs/RESEARCH.md).
+How it fits together: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
