@@ -6,6 +6,7 @@ import { runEnv } from './commands/env.ts';
 import { runRecall } from './commands/recall.ts';
 import { runEval } from './commands/eval.ts';
 import { runIndex } from './commands/index-repo.ts';
+import { status } from './commands/status.ts';
 import { sync } from './commands/sync.ts';
 import { init } from './commands/init.ts';
 import { learn } from './commands/learn.ts';
@@ -22,6 +23,7 @@ ${bold('Usage')}
 ${bold('Commands')}
   ${cyan('build')}              Generate adapters/ for every agent from core/
   ${cyan('init')}               Scaffold the current repository to use the harness
+  ${cyan('status')}             Everything at a glance — content, learning, graphs, coverage
   ${cyan('doctor')}             Check the harness is wired up correctly
   ${cyan('lint')}               Check skills against the authoring rules
   ${cyan('recall')} <question>  Ask the knowledge base — incidents, understandings, ADRs
@@ -66,6 +68,9 @@ async function main(argv: string[]): Promise<number> {
     case 'init':
       init(harnessRoot, projectRoot);
       return 0;
+
+    case 'status':
+      return status(harnessRoot, projectRoot) ? 0 : 1;
 
     case 'doctor':
       return doctor(harnessRoot, projectRoot) ? 0 : 1;

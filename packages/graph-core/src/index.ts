@@ -14,6 +14,8 @@ export {
   collectEnvDefs,
   collectEnvReads,
   envFileOrder,
+  loadEnvFindings,
+  storeEnvFindings,
   type EnvAnalysis,
   type EnvDef,
   type EnvFinding,

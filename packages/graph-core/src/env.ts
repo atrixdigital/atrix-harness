@@ -286,5 +286,35 @@ export function analyseEnv(reads: EnvRead[], defs: EnvDef[], root: string): EnvA
   return { reads, defs, findings };
 }
 
+/**
+ * Persist findings so a session-start hook can surface them without paying for a
+ * TypeScript Program — analysis takes seconds, and a hook has a five-second budget.
+ */
+export function storeEnvFindings(db: import('bun:sqlite').Database, findings: EnvFinding[]): void {
+  db.run(`CREATE TABLE IF NOT EXISTS env_findings (
+    id INTEGER PRIMARY KEY, kind TEXT NOT NULL, name TEXT NOT NULL,
+    detail TEXT NOT NULL, locations TEXT NOT NULL
+  )`);
+  db.run('DELETE FROM env_findings');
+  const insert = db.prepare('INSERT INTO env_findings (kind, name, detail, locations) VALUES (?, ?, ?, ?)');
+  db.transaction(() => {
+    for (const f of findings) insert.run(f.kind, f.name, f.detail, f.locations.join('\n'));
+  })();
+}
+
+export function loadEnvFindings(db: import('bun:sqlite').Database): EnvFinding[] {
+  try {
+    return db
+      .query<{ kind: string; name: string; detail: string; locations: string }, []>(
+        'SELECT kind, name, detail, locations FROM env_findings',
+      )
+      .all()
+      .map((r) => ({ kind: r.kind as EnvFinding['kind'], name: r.name, detail: r.detail, locations: r.locations.split('\n') }));
+  } catch {
+    // Table absent means the repo has not been indexed since this shipped.
+    return [];
+  }
+}
+
 export const envFileOrder = (): readonly string[] => ENV_FILES;
 export const fileLabel = (file: string): string => basename(file);

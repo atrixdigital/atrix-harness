@@ -324,6 +324,21 @@ numbers, quoted strings and hex stripped — plus the date, not the time. Its re
 first ones in that file, because a regression there does not degrade a feature, it leaks. `.atrix/`
 is gitignored by `atrix init` regardless.
 
+**The session-start hook earns its place or says nothing.** Harness-Bench's first
+recommendation is execution legibility — make pending obligations and recoverable failures
+explicit rather than leaving them to be rediscovered. `SessionStart` is the only surface that can
+do that before work begins, and it previously reported almost nothing while occupying it.
+
+It now surfaces exactly the facts that change what an agent does next: env values that differ
+between files (read from a cached analysis, because a hook has no budget for a TypeScript
+Program), a failure that has already recurred three times here, a stale or missing index, and
+undistilled incidents. Everything else is silence. A banner that recites repo statistics trains
+people to skip it, and then the one line that mattered gets skipped too.
+
+`atrix status` is the human-facing equivalent. It is deliberately separate from `doctor`: doctor
+is a gate that must stay fast and binary for CI, and folding advice into a gate makes it noisy to
+run there.
+
 **Success is silent, failure is verbose.** See `packages/cli/src/lib/log.ts`. A harness that
 narrates every success trains people to ignore it.
 

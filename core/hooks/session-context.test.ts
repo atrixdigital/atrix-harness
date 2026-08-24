@@ -1,0 +1,117 @@
+import { Database } from 'bun:sqlite';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+
+/**
+ * Runs the hook as a process in a seeded workspace, rather than importing its internals.
+ *
+ * This is the real entry path: a hook is a script that reads the working directory and
+ * writes one line of JSON. Testing extracted helpers would prove the helpers work while
+ * leaving the thing that actually runs unverified.
+ */
+
+const HOOK = join(import.meta.dir, 'session-context.ts');
+let workspace: string;
+
+beforeEach(() => {
+  workspace = mkdtempSync(join(tmpdir(), 'atrix-session-'));
+  mkdirSync(join(workspace, '.atrix'), { recursive: true });
+});
+afterEach(() => rmSync(workspace, { recursive: true, force: true }));
+
+function run(): string {
+  const proc = Bun.spawnSync(['bun', 'run', HOOK], {
+    cwd: workspace,
+    stdin: new TextEncoder().encode('{"session_id":"s"}'),
+    stdout: 'pipe',
+    stderr: 'pipe',
+    env: { ...process.env, ATRIX_HOME: '' },
+  });
+  const out = proc.stdout.toString().trim();
+  if (out === '') return '';
+  return (JSON.parse(out) as { hookSpecificOutput: { additionalContext: string } }).hookSpecificOutput.additionalContext;
+}
+
+const seedDb = (findings: { kind: string; name: string }[]): void => {
+  const db = new Database(join(workspace, '.atrix', 'graph.db'), { create: true });
+  db.run('CREATE TABLE env_findings (id INTEGER PRIMARY KEY, kind TEXT, name TEXT, detail TEXT, locations TEXT)');
+  for (const f of findings) db.run('INSERT INTO env_findings (kind, name, detail, locations) VALUES (?,?,?,?)', [f.kind, f.name, 'd', 'l']);
+  db.close();
+};
+
+const today = new Date().toISOString().slice(0, 10);
+
+describe('silence is the default', () => {
+  test('says nothing when there is nothing worth saying', () => {
+    // A banner that recites statistics trains people to skip it, and then the one line
+    // that mattered gets skipped too.
+    seedDb([]);
+    expect(run()).toBe('');
+  });
+
+  test('a failure seen twice is not yet a standing problem', () => {
+    seedDb([]);
+    writeFileSync(
+      join(workspace, '.atrix', 'trace.jsonl'),
+      [1, 2].map(() => JSON.stringify({ date: today, tool: 'Bash', ok: false, program: 'psql', signature: 'refused' })).join('\n'),
+    );
+    expect(run()).toBe('');
+  });
+});
+
+describe('things that change what to do next', () => {
+  test('warns about env values that differ between files', () => {
+    seedDb([{ kind: 'conflicting', name: 'DATABASE_URL' }]);
+    const out = run();
+    expect(out).toContain('DATABASE_URL');
+    expect(out).toContain('defined in more than one env file');
+  });
+
+  test('warns about a secret behind a public prefix', () => {
+    seedDb([{ kind: 'client-exposed-secret', name: 'NEXT_PUBLIC_STRIPE_SECRET_KEY' }]);
+    expect(run()).toContain('browser bundle');
+  });
+
+  test('surfaces a recurring failure so nobody has to remember to run observe', () => {
+    seedDb([]);
+    writeFileSync(
+      join(workspace, '.atrix', 'trace.jsonl'),
+      [1, 2, 3].map(() => JSON.stringify({ date: today, tool: 'Bash', ok: false, program: 'psql', signature: 'connection refused' })).join('\n'),
+    );
+    const out = run();
+    expect(out).toContain('recurred');
+    expect(out).toContain('psql');
+  });
+
+  test('tells you the graph tools are unavailable when there is no index', () => {
+    expect(run()).toContain('No code graph');
+  });
+});
+
+describe('robustness', () => {
+  test('a truncated trace line does not break the session', () => {
+    seedDb([]);
+    writeFileSync(join(workspace, '.atrix', 'trace.jsonl'), '{"date":"2026-01-01","ok":fal');
+    expect(() => run()).not.toThrow();
+  });
+
+  test('a corrupt database does not break the session', () => {
+    writeFileSync(join(workspace, '.atrix', 'graph.db'), 'not a database');
+    expect(() => run()).not.toThrow();
+  });
+
+  test('emits valid single-line JSON', () => {
+    seedDb([{ kind: 'conflicting', name: 'A_VAR' }]);
+    const proc = Bun.spawnSync(['bun', 'run', HOOK], {
+      cwd: workspace,
+      stdin: new TextEncoder().encode('{"session_id":"s"}'),
+      stdout: 'pipe',
+      env: { ...process.env, ATRIX_HOME: '' },
+    });
+    const line = proc.stdout.toString().trim();
+    expect(line.split('\n')).toHaveLength(1);
+    expect(() => JSON.parse(line)).not.toThrow();
+  });
+});

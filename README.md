@@ -71,6 +71,7 @@ atrix sync      # pull the harness, rebuild adapters, and print what it learned
 
 | | |
 |---|---|
+| `atrix status` | Everything at a glance — content, learning, graphs, coverage |
 | `atrix build` | Regenerate `adapters/` from `core/` |
 | `atrix init` | Scaffold the current repo to use the harness |
 | `atrix doctor` | Check everything is wired up |
