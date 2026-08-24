@@ -12,6 +12,8 @@ export interface SymbolRow {
   id: number;
   name: string;
   kind: string;
+  /** Which repo in the workspace this lives in. */
+  project: string;
   path: string;
   line: number;
   exported: boolean;
@@ -29,7 +31,7 @@ const DEFAULT_LIMIT = 30;
 const MAX_IMPACT_NODES = 200;
 
 const SELECT_SYMBOL = `
-  SELECT s.id, s.name, s.kind, f.path, s.line, s.exported
+  SELECT s.id, s.name, s.kind, f.project, f.path, s.line, s.exported
   FROM symbols s JOIN files f ON f.id = s.file_id
 `;
 
@@ -37,6 +39,7 @@ interface RawSymbol {
   id: number;
   name: string;
   kind: string;
+  project: string;
   path: string;
   line: number;
   exported: number;
@@ -46,6 +49,7 @@ const toSymbol = (r: RawSymbol): SymbolRow => ({
   id: r.id,
   name: r.name,
   kind: r.kind,
+  project: r.project,
   path: r.path,
   line: r.line,
   exported: r.exported === 1,
@@ -55,20 +59,35 @@ const toSymbol = (r: RawSymbol): SymbolRow => ({
  * Find declarations by name. Exact matches first, then prefix, then substring —
  * an agent searching "createBooking" wants that symbol, not the 40 things containing it.
  */
-export function search(db: Database, term: string, limit = DEFAULT_LIMIT): SymbolRow[] {
+export function search(db: Database, term: string, limit = DEFAULT_LIMIT, project?: string): SymbolRow[] {
+  // Scope defaults to the active project. Searching every repo by default would answer
+  // a question about playo-web with a symbol from ezrov — technically a match, and wrong.
+  const scope = project === undefined ? '' : 'AND f.project = ?5';
   const rows = db
-    .query<RawSymbol & { rank: number }, [string, string, string, number]>(
+    .query<RawSymbol, [string, string, string, number] | [string, string, string, number, string]>(
       `${SELECT_SYMBOL}
-       WHERE s.name = ?1 OR s.name LIKE ?2 OR s.name LIKE ?3
+       WHERE (s.name = ?1 OR s.name LIKE ?2 OR s.name LIKE ?3) ${scope}
        ORDER BY
          CASE WHEN s.name = ?1 THEN 0 WHEN s.name LIKE ?2 THEN 1 ELSE 2 END,
          s.exported DESC,
          length(s.name),
+         f.project,
          f.path
        LIMIT ?4`,
     )
-    .all(term, `${term}%`, `%${term}%`, limit);
+    .all(...((project === undefined
+      ? [term, `${term}%`, `%${term}%`, limit]
+      : [term, `${term}%`, `%${term}%`, limit, project]) as [string, string, string, number]));
   return rows.map(toSymbol);
+}
+
+/** Projects present in the index, for reporting and for `--all` disambiguation. */
+export function projects(db: Database): { project: string; files: number }[] {
+  return db
+    .query<{ project: string; files: number }, []>(
+      'SELECT project, count(*) AS files FROM files GROUP BY project ORDER BY project',
+    )
+    .all();
 }
 
 function related(db: Database, id: number, direction: 'in' | 'out', limit: number): EdgeRow[] {

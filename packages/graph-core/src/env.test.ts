@@ -21,7 +21,7 @@ afterEach(() => rmSync(root, { recursive: true, force: true }));
 
 const analyse = () =>
   analyseEnv(
-    collectEnvReads(createProgramFor({ root, include: [], exclude: [] }), root),
+    collectEnvReads(createProgramFor({ root, include: [], exclude: [], project: 'test' }), root),
     collectEnvDefs(root),
     root,
   );
@@ -40,7 +40,7 @@ const c = Bun.env.BUN_STYLE;
 // process.env.IN_A_COMMENT should not count
 `,
     );
-    const names = new Set(collectEnvReads(createProgramFor({ root, include: [], exclude: [] }), root).map((r) => r.name));
+    const names = new Set(collectEnvReads(createProgramFor({ root, include: [], exclude: [], project: 'test' }), root).map((r) => r.name));
 
     expect(names).toContain('PLAIN_ACCESS');
     expect(names).toContain('BRACKET_ACCESS');
@@ -51,7 +51,7 @@ const c = Bun.env.BUN_STYLE;
 
   test('does not match an unrelated object called env', () => {
     write('src/a.ts', 'const config = { env: { NOT_REAL: 1 } };\nconst x = config.env.NOT_REAL;\n');
-    expect(collectEnvReads(createProgramFor({ root, include: [], exclude: [] }), root)).toEqual([]);
+    expect(collectEnvReads(createProgramFor({ root, include: [], exclude: [], project: 'test' }), root)).toEqual([]);
   });
 });
 

@@ -28,7 +28,7 @@ beforeEach(() => {
   write('src/api.ts', `import { priceBooking, type Booking } from './booking.ts';\n\nexport function handler(b: Booking): number {\n  return priceBooking(b);\n}\n`);
 
   db = open(join(root, 'graph.db'));
-  indexRepo(db, { root, include: [], exclude: [] });
+  indexRepo(db, { root, include: [], exclude: [], project: 'test' });
 });
 
 afterEach(() => {
@@ -113,7 +113,7 @@ describe('impact', () => {
 describe('search ranking', () => {
   test('puts the exact match first', () => {
     write('src/extra.ts', 'export function toMinorUnitsHelper(): void {}\n');
-    indexRepo(db, { root, include: [], exclude: [] });
+    indexRepo(db, { root, include: [], exclude: [], project: 'test' });
     expect(search(db, 'toMinorUnits')[0]?.name).toBe('toMinorUnits');
   });
 });

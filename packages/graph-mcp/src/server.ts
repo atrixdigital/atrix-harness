@@ -33,6 +33,18 @@ import { renderAmbiguous, renderCallees, renderCallers, renderContext, renderImp
 const projectRoot = process.env.ATRIX_PROJECT_ROOT ?? process.cwd();
 const dbPath = join(projectRoot, '.atrix', 'graph.db');
 
+/**
+ * Default scope for symbol queries.
+ *
+ * A workspace holds many independent repos. Answering a playo-web question with an ezrov
+ * symbol is technically a match and practically wrong, so searches scope to the active
+ * project unless the caller asks for the whole workspace.
+ */
+const activeProject = (): string | undefined => {
+  const named = process.env.ATRIX_PROJECT;
+  return named !== undefined && named !== '' ? named : undefined;
+};
+
 const text = (body: string) => ({ content: [{ type: 'text' as const, text: body }] });
 
 function withDb<T>(fn: (db: ReturnType<typeof open>) => T): T | string {
@@ -85,8 +97,18 @@ const server = new McpServer({ name: 'atrix-graph', version: '0.1.0' });
 server.tool(
   'atrix_search',
   'Find declarations by name across the repository. Use this before reading files — it answers "where is X" in one call. Returns kind, export status and location for each match.',
-  { query: z.string().describe('Symbol name or fragment, e.g. "createBooking"'), limit: z.number().int().min(1).max(100).default(30) },
-  ({ query, limit }) => text(withDb((db) => renderSymbols(search(db, query, limit), query)) as string),
+  {
+    query: z.string().describe('Symbol name or fragment, e.g. "createBooking"'),
+    limit: z.number().int().min(1).max(100).default(30),
+    allProjects: z
+      .boolean()
+      .default(false)
+      .describe('Search every repo in the workspace, not just the active one. Use to check whether another project already solves this.'),
+  },
+  ({ query, limit, allProjects }) =>
+    text(
+      withDb((db) => renderSymbols(search(db, query, limit, allProjects ? undefined : activeProject()), query)) as string,
+    ),
 );
 
 server.tool(
@@ -158,7 +180,7 @@ server.tool(
       .describe('Narrow to one variable, e.g. "DATABASE_URL". Omit for the full audit.'),
   },
   ({ name }) => {
-    const program = createProgramFor({ root: projectRoot, include: [], exclude: ['node_modules', 'dist', '.next'] });
+    const program = createProgramFor({ root: projectRoot, include: [], exclude: ['node_modules', 'dist', '.next'], project: 'audit' });
     const { reads, findings } = analyseEnv(collectEnvReads(program, projectRoot), collectEnvDefs(projectRoot), projectRoot);
 
     if (name !== undefined) {

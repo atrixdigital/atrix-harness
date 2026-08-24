@@ -22,6 +22,7 @@ import { appendFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { observe, validateThresholds } from './lib/loop-guard.ts';
 import { configuredThresholds, loadState, saveState } from './lib/loop-state.ts';
+import { projectOf, stateDir, workspaceRoot } from './lib/project.ts';
 
 interface Payload {
   session_id?: string;
@@ -34,6 +35,8 @@ export interface TraceRecord {
   date: string;
   tool: string;
   ok: boolean;
+  /** Which repo in the workspace. Absent means the workspace itself. */
+  project?: string;
   /** For Bash, the program invoked. Never the arguments. */
   program?: string;
   /** Normalised error text, safe to aggregate across runs. */
@@ -140,8 +143,14 @@ async function runAsHook(): Promise<void> {
   const record = toRecord(payload, new Date().toISOString().slice(0, 10));
   if (record === undefined) return;
 
-  const projectRoot = process.cwd();
-  const dir = join(projectRoot, '.atrix');
+  // Hooks run at the workspace root, so the project comes from the payload rather than
+  // the working directory. Without this, twenty repos share one trace and every
+  // recurrence count is meaningless.
+  const workspace = workspaceRoot() ?? process.cwd();
+  const project = projectOf(payload, workspace);
+  if (project !== undefined) record.project = project;
+
+  const dir = stateDir(workspace, project);
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
   appendFileSync(join(dir, 'trace.jsonl'), `${JSON.stringify(record)}\n`, 'utf8');
 
@@ -157,11 +166,11 @@ async function runAsHook(): Promise<void> {
   const resultSignature = signatureOf(text);
 
   const { state, nudge } = observe(
-    loadState(projectRoot),
+    loadState(dir),
     { sessionId, tool: record.tool, input: payload.tool_input ?? {}, resultSignature, now: Date.now() },
-    validateThresholds(configuredThresholds(projectRoot)),
+    validateThresholds(configuredThresholds(workspace)),
   );
-  saveState(projectRoot, state);
+  saveState(dir, state);
 
   if (nudge !== undefined) {
     console.log(

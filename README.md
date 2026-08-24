@@ -17,53 +17,60 @@ only grows is a harness that rots.
 
 ## Install
 
+Clone the harness. **This is your workspace** — launch your agent here, and keep every project
+inside it.
+
 ```bash
 git clone https://github.com/atrixdigital/atrix-harness.git
 cd atrix-harness && bun install && bun run atrix build
-```
 
-Add to your shell so `atrix` works from any repo:
-
-```bash
-export ATRIX_HOME="$HOME/path/to/atrix-harness"
+export ATRIX_HOME="$PWD"
 alias atrix="bun run $ATRIX_HOME/packages/cli/src/index.ts"
 ```
+
+Then bring your projects in. They stay independent repos and are gitignored here, so client code
+never merges into the shared harness:
+
+```bash
+git clone git@github.com:you/playo-web.git projects/playo-web
+atrix index --all        # one index across every project
+```
+
+```
+atrix-harness/          ← launch Claude, Codex or Orca here
+├── AGENTS.md           the manual every agent reads
+├── core/               rules, skills, roles          shared
+├── learning/           incidents                     shared
+├── .atrix/             index, traces                 yours only, gitignored
+└── projects/           gitignored
+    ├── playo-web/      its own git remote
+    └── ezrov/          its own git remote
+```
+
+Searches scope to whichever project you are in; `allProjects` spans the workspace, so
+"has anyone already solved this" is answerable across every repo at once.
 
 ### Claude Code
 
 ```
-/plugin marketplace add <path-to>/atrix-harness/adapters/claude
+/plugin marketplace add ./adapters/claude
 /plugin install atrix-core@atrix-harness
 /plugin install atrix-skills@atrix-harness
+/plugin install atrix-graphs@atrix-harness
 ```
 
 ### Codex, Gemini, Cursor
 
-Point the agent at the generated bundle — `adapters/codex/AGENTS.md`,
-`adapters/gemini/GEMINI.md`, or copy `adapters/cursor/.cursor/` into the repo.
-
-### Any repo
-
-```bash
-cd ~/your-project
-atrix init      # AGENTS.md, CLAUDE.md, .atrix/config.json, and the graph MCP server
-atrix index     # build the code graph
-```
-
-`init` merges into an existing `.mcp.json` rather than replacing it, never overwrites an
-`AGENTS.md` you already have, and records which harness commit you started from.
+Point the agent at `adapters/codex/AGENTS.md`, `adapters/gemini/GEMINI.md`, or copy
+`adapters/cursor/.cursor/` into place. `adapters/*/mcp.json` carries the graph server.
 
 ### Staying current
 
 ```bash
-atrix sync      # pull the harness, rebuild adapters, and print what it learned
+atrix sync      # pull the harness, rebuild adapters, print what it learned
 ```
 
-`atrix doctor` tells you when your repo is behind:
-
-```
-✗ harness up to date — 3 harness commit(s) behind — run `atrix sync`
-```
+`atrix doctor` tells you when you are behind.
 
 ---
 

@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { log } from '../lib/log.ts';
 import { harnessPaths } from '../lib/paths.ts';
@@ -11,14 +11,15 @@ import { harnessPaths } from '../lib/paths.ts';
  * how you end up with a rule library full of one-off workarounds.
  */
 
-function nextId(incidentsDir: string): string {
-  mkdirSync(incidentsDir, { recursive: true });
-  const ids = readdirSync(incidentsDir)
-    .map((f) => /^incident-(\d{4})/.exec(f)?.[1])
-    .filter((v): v is string => v !== undefined)
-    .map(Number);
-  const next = ids.length === 0 ? 1 : Math.max(...ids) + 1;
-  return String(next).padStart(4, '0');
+/**
+ * Date plus slug rather than a sequence number.
+ *
+ * Several developers share this repo. Two of them capturing an incident on the same
+ * afternoon both compute "the next free number" and both write incident-0006 — a git
+ * conflict in the one directory whose purpose is collecting independent notes.
+ */
+function incidentId(date: string, slug: string): string {
+  return `incident-${date}-${slug}`;
 }
 
 const SLUG_MAX = 48;
@@ -46,9 +47,11 @@ function slugify(title: string): string {
 
 export function learn(harnessRoot: string, title: string, date: string): string {
   const p = harnessPaths(harnessRoot);
-  const id = nextId(p.incidents);
+  mkdirSync(p.incidents, { recursive: true });
+
   const slug = slugify(title);
-  const file = join(p.incidents, `incident-${id}-${slug}.md`);
+  const id = incidentId(date, slug);
+  const file = join(p.incidents, `${id}.md`);
 
   if (existsSync(file)) {
     log.warn(`${file} already exists — not overwriting.`);
@@ -56,7 +59,7 @@ export function learn(harnessRoot: string, title: string, date: string): string 
   }
 
   const template = `---
-id: incident-${id}
+id: ${id}
 title: ${title}
 date: ${date}
 status: captured
@@ -88,8 +91,8 @@ cost: unknown
 `;
 
   writeFileSync(file, template, 'utf8');
-  log.ok(`captured incident-${id}`);
+  log.ok(`captured ${id}`);
   log.detail(file);
-  log.detail('Next: fill it in, then run `atrix distill incident-' + id + '` to propose a change.');
+  log.detail(`Next: fill it in, then run \`atrix distill ${id}\` to propose a change.`);
   return file;
 }

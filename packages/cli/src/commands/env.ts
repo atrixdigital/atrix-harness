@@ -26,7 +26,7 @@ export function runEnv(projectRoot: string): boolean {
     ? ((JSON.parse(readFileSync(configPath, 'utf8')) as { index?: { exclude?: string[] } }).index?.exclude ?? [])
     : ['node_modules', 'dist', '.next'];
 
-  const program = createProgramFor({ root: projectRoot, include: [], exclude });
+  const program = createProgramFor({ root: projectRoot, include: [], exclude, project: 'audit' });
   const { reads, defs, findings } = analyseEnv(
     collectEnvReads(program, projectRoot),
     collectEnvDefs(projectRoot),

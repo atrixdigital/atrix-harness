@@ -16,8 +16,8 @@ import type { LoopState } from './loop-guard.ts';
 
 const FILE = 'loop-state.json';
 
-export function loadState(projectRoot: string): LoopState {
-  const path = join(projectRoot, '.atrix', FILE);
+export function loadState(dir: string): LoopState {
+  const path = join(dir, FILE);
   if (!existsSync(path)) return {};
   try {
     const parsed = JSON.parse(readFileSync(path, 'utf8')) as unknown;
@@ -27,9 +27,8 @@ export function loadState(projectRoot: string): LoopState {
   }
 }
 
-export function saveState(projectRoot: string, state: LoopState): void {
+export function saveState(dir: string, state: LoopState): void {
   try {
-    const dir = join(projectRoot, '.atrix');
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, FILE), JSON.stringify(state), 'utf8');
   } catch {
@@ -38,8 +37,8 @@ export function saveState(projectRoot: string, state: LoopState): void {
 }
 
 /** Reads `loopGuard.thresholds` from the project config, if present. */
-export function configuredThresholds(projectRoot: string): unknown {
-  const path = join(projectRoot, '.atrix', 'config.json');
+export function configuredThresholds(workspaceRoot: string): unknown {
+  const path = join(workspaceRoot, '.atrix', 'config.json');
   if (!existsSync(path)) return undefined;
   try {
     const config = JSON.parse(readFileSync(path, 'utf8')) as { loopGuard?: { thresholds?: unknown } };

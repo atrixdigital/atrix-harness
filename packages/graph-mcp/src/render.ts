@@ -10,7 +10,13 @@ import type { Context, EdgeRow, Impact, SymbolRow } from '@atrix/graph-core';
  * The rule throughout: every line must be actionable without a follow-up call.
  */
 
-const loc = (s: SymbolRow): string => `${s.path}:${s.line}`;
+/**
+ * Include the project only when it disambiguates. A workspace search returning
+ * `playo-web/src/a.ts` and `ezrov/src/a.ts` is unreadable without it; a single-project
+ * result prefixed with the same name on every line is noise.
+ */
+const loc = (s: SymbolRow): string =>
+  s.project === '' || s.project === '.harness' ? `${s.path}:${s.line}` : `${s.project}/${s.path}:${s.line}`;
 
 export function renderSymbols(rows: SymbolRow[], term: string): string {
   if (rows.length === 0) {

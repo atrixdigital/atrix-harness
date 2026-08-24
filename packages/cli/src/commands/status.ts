@@ -7,6 +7,7 @@ import { bold, dim, green, log, red, yellow } from '../lib/log.ts';
 import { harnessPaths } from '../lib/paths.ts';
 import { describe as describeVersion, harnessVersion } from '../lib/version.ts';
 import { driftReport } from './sync.ts';
+import { activeProject, listProjects } from '../lib/workspace.ts';
 
 /**
  * One view of everything, for a human.
@@ -55,8 +56,25 @@ export function status(harnessRoot: string, projectRoot: string): boolean {
     },
   ]);
 
+  const projects = listProjects(harnessRoot);
+  const active = activeProject(harnessRoot);
+  if (projects.length > 0) {
+    render('Workspace', [
+      {
+        label: 'projects',
+        value: `${projects.length}`,
+        hint: projects.map((p) => (p.name === active?.name ? bold(p.name) : p.name)).join(' · '),
+      },
+      {
+        label: 'active',
+        value: active === undefined ? dim('the workspace itself') : bold(active.name),
+        hint: active === undefined ? 'cd into a project, or set ATRIX_PROJECT' : undefined,
+      },
+    ]);
+  }
+
   const rows: Row[] = [];
-  const dbPath = join(projectRoot, '.atrix', 'graph.db');
+  const dbPath = join(harnessRoot, '.atrix', 'graph.db');
 
   if (!existsSync(dbPath)) {
     rows.push({ label: 'code graph', value: red('not indexed'), hint: 'atrix index' });
@@ -74,7 +92,11 @@ export function status(harnessRoot: string, projectRoot: string): boolean {
             return 0;
           }
         };
-        rows.push({ label: 'code graph', value: age, hint: `${count('SELECT count(*) n FROM symbols')} symbols · ${count('SELECT count(*) n FROM edges')} edges` });
+        rows.push({
+          label: 'code graph',
+          value: age,
+          hint: `${count('SELECT count(*) n FROM symbols')} symbols · ${count('SELECT count(*) n FROM edges')} edges across ${count('SELECT count(DISTINCT project) n FROM files')} target(s)`,
+        });
         rows.push({ label: 'knowledge', value: `${count('SELECT count(*) n FROM notes')} notes`, hint: 'atrix recall "<question>"' });
 
         const conflicts = count("SELECT count(*) n FROM env_findings WHERE kind IN ('conflicting','client-exposed-secret')");
@@ -91,7 +113,10 @@ export function status(harnessRoot: string, projectRoot: string): boolean {
     }
   }
 
-  const tracePath = join(projectRoot, '.atrix', 'trace.jsonl');
+  const tracePath =
+    active === undefined
+      ? join(harnessRoot, '.atrix', 'trace.jsonl')
+      : join(harnessRoot, '.atrix', 'projects', active.name, 'trace.jsonl');
   if (existsSync(tracePath)) {
     const lines = readFileSync(tracePath, 'utf8').split('\n').filter((l) => l.trim() !== '');
     const failed = lines.filter((l) => l.includes('"ok":false')).length;
@@ -102,7 +127,7 @@ export function status(harnessRoot: string, projectRoot: string): boolean {
     });
   }
 
-  if (rows.length > 0) render('This repository', rows);
+  if (rows.length > 0) render('Index', rows);
 
   const drift = driftReport(harnessRoot, projectRoot);
   if (drift !== undefined) {

@@ -193,6 +193,8 @@ export interface IndexOptions {
   root: string;
   include: string[];
   exclude: string[];
+  /** Scope key. Every row this run writes is tagged with it. */
+  project: string;
 }
 
 /**
@@ -267,15 +269,30 @@ export function indexRepo(db: Database, options: IndexOptions): IndexResult {
     moduleIds: new Map(),
   };
 
+  // A target must never index another target's files. The workspace root's tsconfig and
+  // glob both reach into projects/, which would index every project twice — once under
+  // its own name and once under the harness — doubling the index and making a
+  // cross-project search return each result in duplicate.
+  const nested = `${options.root.replace(/\/$/, '')}/projects/`;
   const sources = program
     .getSourceFiles()
-    .filter((s) => !s.isDeclarationFile && !s.fileName.includes('/node_modules/'));
+    .filter(
+      (s) =>
+        !s.isDeclarationFile &&
+        !s.fileName.includes('/node_modules/') &&
+        !s.fileName.startsWith(nested),
+    );
 
-  db.run('DELETE FROM edges');
-  db.run('DELETE FROM symbols');
-  db.run('DELETE FROM files');
+  // Only this project's rows. Reindexing playo-web must not wipe ezrov — that is the
+  // difference between a workspace index and a single-repo one.
+  db.run(
+    `DELETE FROM edges WHERE file_id IN (SELECT id FROM files WHERE project = ?)`,
+    [options.project],
+  );
+  db.run(`DELETE FROM symbols WHERE file_id IN (SELECT id FROM files WHERE project = ?)`, [options.project]);
+  db.run('DELETE FROM files WHERE project = ?', [options.project]);
 
-  const insertFile = db.prepare('INSERT INTO files (path, mtime) VALUES (?, ?) RETURNING id');
+  const insertFile = db.prepare('INSERT INTO files (project, path, mtime) VALUES (?, ?, ?) RETURNING id');
 
   // Two passes: every declaration must exist before any edge can point at it.
   db.transaction(() => {
@@ -287,7 +304,7 @@ export function indexRepo(db: Database, options: IndexOptions): IndexResult {
         skipped.push(source.fileName);
         continue;
       }
-      const row = insertFile.get(relative(options.root, source.fileName), mtime) as { id: number };
+      const row = insertFile.get(options.project, relative(options.root, source.fileName), mtime) as { id: number };
       ctx.fileIds.set(source.fileName, row.id);
       collectDeclarations(ctx, source, row.id);
     }
@@ -301,7 +318,12 @@ export function indexRepo(db: Database, options: IndexOptions): IndexResult {
     }
   })();
 
-  const symbols = db.query<{ n: number }, []>('SELECT count(*) AS n FROM symbols').get()?.n ?? 0;
+  const symbols =
+    db
+      .query<{ n: number }, [string]>(
+        'SELECT count(*) AS n FROM symbols s JOIN files f ON f.id = s.file_id WHERE f.project = ?1',
+      )
+      .get(options.project)?.n ?? 0;
 
   return { files: ctx.fileIds.size, symbols, edges, durationMs: Date.now() - started, skipped };
 }

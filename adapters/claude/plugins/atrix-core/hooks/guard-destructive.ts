@@ -13,6 +13,7 @@
 
 import { shouldEscalate, validateThresholds } from './lib/loop-guard.ts';
 import { configuredThresholds, loadState } from './lib/loop-state.ts';
+import { projectOf, stateDir, workspaceRoot } from './lib/project.ts';
 
 interface Payload {
   session_id?: string;
@@ -63,12 +64,13 @@ function loopEscalation(payload: Payload): string | undefined {
   const tool = payload.tool_name;
   if (sessionId === undefined || tool === undefined) return undefined;
 
+  const workspace = workspaceRoot() ?? process.cwd();
   const chain = shouldEscalate(
-    loadState(process.cwd()),
+    loadState(stateDir(workspace, projectOf(payload, workspace))),
     sessionId,
     tool,
     payload.tool_input ?? {},
-    validateThresholds(configuredThresholds(process.cwd())),
+    validateThresholds(configuredThresholds(workspace)),
   );
   if (chain === undefined) return undefined;
 

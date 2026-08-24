@@ -14,10 +14,21 @@ import { harnessPaths } from './paths.ts';
  *   dismissed — analysed and found not to generalise. A valid, common outcome.
  */
 
-export const INCIDENT_ID = /^incident-\d{4}$/;
+/**
+ * Incident identity.
+ *
+ * Sequential ids collide the moment two developers capture something on the same day:
+ * both compute the next free number, both write incident-0006, and git presents a
+ * conflict in a directory whose whole purpose is accumulating independent notes.
+ *
+ * Date plus slug is collision-resistant in practice, sorts chronologically, and reads as
+ * something rather than a number nobody can place. The original sequential form stays
+ * valid so existing incidents and the rules citing them keep working.
+ */
+export const INCIDENT_ID = /^incident-(\d{4}|\d{4}-\d{2}-\d{2}-[a-z0-9]+(-[a-z0-9]+)*)$/;
 
 export const incidentSchema = z.object({
-  id: z.string().regex(INCIDENT_ID, 'must be "incident-NNNN"'),
+  id: z.string().regex(INCIDENT_ID, 'must be "incident-NNNN" or "incident-YYYY-MM-DD-slug"'),
   title: z.string().min(5),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'must be YYYY-MM-DD'),
   status: z.enum(['captured', 'distilled', 'merged', 'dismissed']),

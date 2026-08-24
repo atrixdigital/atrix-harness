@@ -30,7 +30,7 @@ ${bold('Commands')}
   ${cyan('observe')}            Mine the local trace for recurring failure patterns
   ${cyan('learn')} <title>      Capture an incident — the start of the learning loop
   ${cyan('distill')} [id]       Turn an incident into a proposed change; lists pending if no id
-  ${cyan('index')}              Build the code graph for this repository
+  ${cyan('index')}              Index the active project; --all for the whole workspace
   ${cyan('env')}                Audit environment variables — reads, definitions, conflicts
   ${cyan('sync')}               Pull the latest harness and rebuild adapters
   ${cyan('eval')}               Which layers are measured; --run to measure them
@@ -98,8 +98,7 @@ async function main(argv: string[]): Promise<number> {
       distill(harnessRoot, rest[0]);
       return 0;
     case 'index':
-      runIndex(projectRoot, harnessRoot);
-      return 0;
+      return runIndex(harnessRoot, rest) ? 0 : 1;
 
     case 'env':
       return runEnv(projectRoot) ? 0 : 1;

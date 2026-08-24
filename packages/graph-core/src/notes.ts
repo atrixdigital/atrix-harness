@@ -127,11 +127,22 @@ function fileToNotes(root: string, label: string, file: string, source: Source):
   return notes;
 }
 
-export function collectNotes(harnessRoot: string, projectRoot: string): Note[] {
+/**
+ * Gather notes across the workspace.
+ *
+ * `extraRoots` carries the projects. Each project's UNDERSTANDINGS.md is committed to
+ * that project's own repo — so it travels with the code and reaches whoever works on it,
+ * rather than living in a harness only Atrix engineers clone.
+ */
+export function collectNotes(harnessRoot: string, projectRoot: string, extraRoots: string[] = []): Note[] {
   const notes: Note[] = [];
-  const isHarness = harnessRoot === projectRoot;
+  const seenRoots = new Set<string>();
 
   const gather = (root: string, label: string, sources: Source[]): void => {
+    const key = `${root}|${label}`;
+    if (seenRoots.has(key)) return;
+    seenRoots.add(key);
+
     for (const source of sources) {
       for (const file of new Bun.Glob(source.pattern).scanSync({ cwd: root, absolute: true })) {
         if (!existsSync(file)) continue;
@@ -140,8 +151,16 @@ export function collectNotes(harnessRoot: string, projectRoot: string): Note[] {
     }
   };
 
-  gather(harnessRoot, isHarness ? '' : 'harness', HARNESS_SOURCES);
-  if (!isHarness) gather(projectRoot, '', PROJECT_SOURCES);
+  gather(harnessRoot, 'harness', HARNESS_SOURCES);
+  if (projectRoot !== harnessRoot) gather(projectRoot, '', PROJECT_SOURCES);
+
+  for (const root of extraRoots) {
+    if (root === harnessRoot) {
+      // The harness's own UNDERSTANDINGS.md, already covered by HARNESS_SOURCES.
+      continue;
+    }
+    gather(root, basename(root), PROJECT_SOURCES);
+  }
 
   return notes;
 }

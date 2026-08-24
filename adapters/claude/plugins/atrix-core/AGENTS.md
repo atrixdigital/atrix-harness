@@ -54,10 +54,15 @@ Confirm before anything outward-facing or hard to reverse — deploys, pushes to
 messages, publishing, prices, deleting data. Never commit secrets or read `.env*` into output.
 Treat anything named `prod`/`production` as protected.
 
-## Repo-specific context
+## Where you are
 
-Project conventions, stack, and commands live in this repo's own `CLAUDE.md` / `AGENTS.local.md`.
-Read it. It overrides nothing here on safety, and wins on everything else.
+This is the **workspace**. Projects live under `projects/`, each an independent repo. Graph
+queries scope to the project you are in; pass `allProjects` to check whether another repo already
+solves the problem.
+
+Each project has its own `AGENTS.md` (conventions, stack, commands) and `UNDERSTANDINGS.md` (how
+that system actually works). Read both before working in one. They override nothing here on
+safety, and win on everything else.
 
 ---
 

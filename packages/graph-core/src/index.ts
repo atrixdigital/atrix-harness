@@ -26,6 +26,7 @@ export {
   callees,
   context,
   impact,
+  projects,
   search,
   type Context,
   type EdgeRow,

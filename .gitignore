@@ -18,3 +18,8 @@ dist/
 
 # eval scratch
 cross-tenant-probe.ts
+
+# Projects are independent git repos cloned into the workspace. They keep their own
+# remotes and history; client code never merges into the shared harness repo.
+projects/
+!projects/.gitkeep

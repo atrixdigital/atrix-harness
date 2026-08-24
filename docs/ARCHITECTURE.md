@@ -73,6 +73,50 @@ Zod schema, so `atrix build` and CI both reject a rule that cannot name what wen
 `core/rules/typescript-strict.md` is the worked example — it exists because of
 `learning/incidents/incident-0001-*`, and you can read the failure that produced it.
 
+## The workspace model
+
+Developers clone the harness, launch their agent **at its root**, and keep every project
+under `projects/`.
+
+```
+atrix-harness/          git: atrixdigital/atrix-harness   ← launch the agent here
+├── AGENTS.md           the org-wide manual
+├── core/               rules, methodology, skills, roles   committed, shared
+├── learning/           incidents and candidates            committed, shared
+├── .atrix/             index, traces, loop state           GITIGNORED, per developer
+└── projects/           GITIGNORED
+    ├── playo-web/      git: its own remote
+    └── ezrov/          git: its own remote
+```
+
+Projects are **independent git repos, gitignored here**. Client code never merges into a shared
+org repo, each project keeps its own history and remote, and nobody deals with submodules.
+
+### What this breaks, and how each is handled
+
+The working directory is now the *workspace*, not the project. Everything that assumed
+`process.cwd()` identified what was being worked on had to change.
+
+| Concern | Resolution |
+|---|---|
+| **Code graph** | One `.atrix/graph.db` with `project` as a column. Searches scope to the active project; `allProjects: true` spans the workspace, which is what makes "has anyone already solved this" answerable. A target never indexes another target's files — the workspace tsconfig reaches into `projects/`, which would index everything twice. |
+| **Which project?** | `cwd` if the developer has `cd`'d in, else `ATRIX_PROJECT`. Hooks cannot use either — they run at the root — so they resolve it from the tool payload: a `file_path`, or `cd projects/x` in a command. Undefined is a real answer meaning "the workspace itself", which is what a rule edit is. |
+| **Environment** | Analysed **per project**. Two projects each defining `DATABASE_URL` differently is correct; only a disagreement *within* one project means something is about to talk to the wrong system. |
+| **Traces and loop state** | `.atrix/projects/<name>/`, so twenty repos do not share one stream. A loop in playo-web must not nudge someone working on ezrov, and a recurrence count pooled across repos is meaningless. |
+| **Incident ids** | `incident-YYYY-MM-DD-slug`, not a sequence. Two developers capturing on the same afternoon both computed "the next free number" and both wrote `incident-0006` — a git conflict in the one directory whose purpose is collecting independent notes. Sequential ids remain valid so existing rules keep resolving. |
+| **UNDERSTANDINGS.md** | Lives in **each project's own repo** and is committed there, so it travels with the code and reaches whoever works on it. The information graph indexes all of them plus the harness's own. |
+
+### Shared versus private
+
+| Shared, committed | Private, gitignored |
+|---|---|
+| `core/` — rules, skills, roles | `.atrix/graph.db` — each developer indexes locally |
+| `learning/` — incidents merge across the team | `.atrix/**/trace.jsonl` — your failures are yours |
+| each project's `UNDERSTANDINGS.md`, in that project | `.atrix/**/loop-state.json` |
+
+Only *distilled* knowledge is shared. A trace is raw and per-developer; an incident is reviewed
+and reaches everyone.
+
 ## Four artefacts, four questions
 
 Contributions land in the wrong place when these blur together.

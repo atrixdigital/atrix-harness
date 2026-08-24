@@ -29,8 +29,8 @@ const slug = z
 const provenance = z
   .string()
   .regex(
-    /^(incident-\d{4}|research-[a-z0-9][a-z0-9.-]*|founding)$/,
-    'must be "incident-NNNN", "research-<ref>", or "founding"',
+    /^(incident-(\d{4}|\d{4}-\d{2}-\d{2}-[a-z0-9-]+)|research-[a-z0-9][a-z0-9.-]*|founding)$/,
+    'must be "incident-NNNN", "incident-YYYY-MM-DD-slug", "research-<ref>", or "founding"',
   );
 
 export const ruleSchema = z.object({

@@ -7,7 +7,7 @@ import { Database } from 'bun:sqlite';
  * and the index is a single file the agent can be told to delete and rebuild.
  */
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 const DDL = `
 PRAGMA journal_mode = WAL;
@@ -18,11 +18,17 @@ CREATE TABLE IF NOT EXISTS meta (
   value TEXT NOT NULL
 );
 
+-- The project column scopes every row. A workspace holds many independent repos, so an
+-- unscoped query would answer a question about playo-web with a symbol from ezrov.
+-- Path is unique WITHIN a project, not globally: two projects both have src/index.ts.
 CREATE TABLE IF NOT EXISTS files (
-  id    INTEGER PRIMARY KEY,
-  path  TEXT NOT NULL UNIQUE,
-  mtime INTEGER NOT NULL
+  id      INTEGER PRIMARY KEY,
+  project TEXT NOT NULL,
+  path    TEXT NOT NULL,
+  mtime   INTEGER NOT NULL,
+  UNIQUE (project, path)
 );
+CREATE INDEX IF NOT EXISTS idx_files_project ON files(project);
 
 -- A declaration. Identity is (file, start offset), which is stable across renames
 -- of the symbol but not across edits — that is why reindexing is per-file.
