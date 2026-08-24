@@ -257,6 +257,44 @@ modification-pattern signals rather than trusting pass rate alone.
 edit is an eval that measures nothing. This is why `verify-before-done` demands real command output
 as evidence, and why the `evaluator` role is forbidden from grading its own work.
 
+## 6g. Reading dsh's own repo, not the write-ups
+
+The blog coverage describes the architecture. The repo itself carries better material, because
+DeepSeek documents its own defects.
+
+**`docs/defensive-patterns.md`** opens: *"each pattern below is a class of defect that actually
+shipped or nearly shipped here, stated as the rule that prevents its recurrence."* That is this
+repo's provenance invariant, arrived at independently by a team with 190k stars. Strong evidence
+the constraint is right.
+
+**`docs/testing.md`** names failure classes we had:
+
+- *"Test the real entry path"* — the published artefact, not the source. `bin` runs the built
+  `lib/bin.js` under plain `node`, "exposing failures tsx masks".
+- *"Verify the world, not the self-report"* — an e2e assertion re-runs the command or re-reads the
+  file externally; "a keyword probe on the agent's own output lets a cheating agent pass". Assert
+  untouched files are byte-identical. This is the operational answer to SpecBench (§6f).
+- *"A guard only guards if the regression actually fails it"* — introduce the regression, watch
+  red, revert. Stated as a requirement, not a nicety.
+- *"Mock only the expensive or non-deterministic boundary"* — keep everything downstream real.
+- On coverage: *"an uncovered line is often dead code the gate is correctly flagging for deletion,
+  not a missing test to bolt on."*
+
+**What we took:** `core/methodology/testing-policy.md`, and a published-artefact test tier in
+`packages/cli/src/lib/adapters.test.ts`. That tier immediately found a live bug — see
+`incident-0004`: generated hook config had the event map at the top level instead of under a
+`hooks` key. Valid JSON, build green, 101 tests passing, and all three hooks inert.
+
+**Their AGENTS.md is 16KB**, against our 60-line cap. Not a contradiction: theirs is repo context
+for people working *on* dsh, which in our model is the per-repo `AGENTS.md` that `atrix init`
+scaffolds. The cap applies to the org-wide manual, which is a different document.
+
+**One pattern worth stealing outright:** their AGENTS.md opens with *"Pre-release stance… **Remove
+this section at the first tagged release**"* — a rule that declares its own expiry. Rules encode
+assumptions about what the model cannot do, and the authoring moment is the only time anyone knows
+what would make the rule obsolete. `expires_when` in rule frontmatter makes that a field, and
+`atrix doctor` lists them every run so pruning is a standing prompt rather than an intention.
+
 ## 7. Control flow belongs in code, not in a context window
 
 *LLM-as-Code / Agentic Programming* (arXiv 2606.15874) inverts the usual arrangement: the program
@@ -301,4 +339,5 @@ The six patterns become `core/playbooks/` in phase 5.
 - [SpecBench: Measuring Reward Hacking in Long-Horizon Coding Agents (arXiv 2605.21384)](https://arxiv.org/pdf/2605.21384)
 - [The 2026 Caching Playbook for Agents](https://galileo.ai/blog/the-2026-caching-playbook-for-agents-bigger-prompts-smaller-bills)
 - [Same Harness, Different Brain (DeepClaude)](https://medium.com/@arthurpro/same-harness-different-brain-c14f4aa8ff57)
+- [deepseek-ai/deepseek-harness — architecture, testing policy, defensive patterns](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/architecture.md)
 - [Orca (Stably AI)](https://github.com/stablyai/orca)

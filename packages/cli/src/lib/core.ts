@@ -38,6 +38,17 @@ export const ruleSchema = z.object({
   description: z.string().min(10),
   source: provenance,
   applies: z.array(z.string()).default(['**']),
+  /**
+   * The condition under which this rule becomes dead scaffolding.
+   *
+   * Every rule encodes an assumption about what the model cannot do on its own, and models
+   * change: scaffolding that was load-bearing for one release is pure overhead by the next.
+   * Declaring the expiry at authoring time is the only moment anyone actually knows it —
+   * afterwards nobody remembers why the rule exists, so nobody dares delete it.
+   *
+   * `doctor` lists these so pruning is a periodic action rather than an intention.
+   */
+  expires_when: z.string().min(10).optional(),
 });
 
 /**

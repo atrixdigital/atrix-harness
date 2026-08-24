@@ -1,36 +1,39 @@
 {
-  "PreToolUse": [
-    {
-      "matcher": "Bash",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "bun run \"${CLAUDE_PLUGIN_ROOT}/hooks/guard-destructive.ts\"",
-          "timeout": 5
-        }
-      ]
-    }
-  ],
-  "PostToolUse": [
-    {
-      "hooks": [
-        {
-          "type": "command",
-          "command": "bun run \"${CLAUDE_PLUGIN_ROOT}/hooks/record-trace.ts\"",
-          "timeout": 5
-        }
-      ]
-    }
-  ],
-  "SessionStart": [
-    {
-      "hooks": [
-        {
-          "type": "command",
-          "command": "bun run \"${CLAUDE_PLUGIN_ROOT}/hooks/session-context.ts\"",
-          "timeout": 5
-        }
-      ]
-    }
-  ]
+  "description": "Atrix harness — safety guard, trace recorder, session context.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run \"${CLAUDE_PLUGIN_ROOT}/hooks/guard-destructive.ts\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run \"${CLAUDE_PLUGIN_ROOT}/hooks/record-trace.ts\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run \"${CLAUDE_PLUGIN_ROOT}/hooks/session-context.ts\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
 }

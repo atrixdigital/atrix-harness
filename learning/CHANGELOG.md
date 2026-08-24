@@ -11,7 +11,13 @@ the knowledge that otherwise gets rediscovered and re-argued every six months.
 
 | 2026-08-21 | [0003](incidents/incident-0003-machine-specific-path-baked-into.md) | **merged** | No rule — a build-time guard. `atrix build` now refuses to write generated output containing a home directory or machine-local temp path. Third incident in a row whose right answer was a check, not a rule. |
 
+| 2026-08-24 | [0004](incidents/incident-0004-generated-hook-config-had-the.md) | **merged** | `adapters.test.ts` (published-artefact test tier) + `core/methodology/testing-policy.md`. Generated hooks had the wrong shape and would never have fired — 101 tests green throughout. |
+
 ## Pruned
+
+Nothing yet, but pruning is now mechanical rather than aspirational: rules may declare
+`expires_when` in frontmatter, and `atrix doctor` lists them every run so the condition gets
+checked instead of forgotten. Four rules currently declare one.
 
 Nothing yet. When `atrix eval` shows a rule no longer changes any outcome, it is proposed for
 deletion and recorded here with the reason — a harness that only grows is a harness that rots.

@@ -107,6 +107,15 @@ export function doctor(harnessRoot: string, projectRoot: string): boolean {
     else log.fail(`${check.name}${check.detail ? ` — ${check.detail}` : ''}`);
   }
 
+  // Not a pass/fail check — a standing prompt. A harness that only grows is a harness
+  // that rots, and the prune stage needs something to act on.
+  const expiring = [...core.rules, ...core.methodology].filter((d) => d.meta.expires_when !== undefined);
+  if (expiring.length > 0) {
+    log.blank();
+    log.info(`${expiring.length} rule(s) declare an expiry condition — check whether any has come true:`);
+    for (const doc of expiring) log.detail(`${doc.meta.name} — ${doc.meta.expires_when ?? ''}`);
+  }
+
   const problems = [
     ...core.issues.map((i) => `${i.path} — ${i.message}`),
     ...incidentIssues,

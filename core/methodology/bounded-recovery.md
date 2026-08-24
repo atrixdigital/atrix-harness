@@ -3,6 +3,7 @@ name: bounded-recovery
 description: The three-level escalation policy for handling failure, and why unbounded retry is forbidden.
 source: founding
 applies: [**]
+expires_when: agent runtimes enforce retry bounds and side-effect classification themselves
 ---
 
 Failure handling is **bounded and explicit**. Three levels, then stop:

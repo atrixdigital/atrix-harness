@@ -561,6 +561,51 @@ refunds, expiry, role escalation.
 
 `atrix_impact` tells you the blast radius; test that set. Full-suite runs are for CI. A local
 loop slow enough to skip is a loop people skip.
+## testing-policy
+
+A green suite is worth exactly what it would have caught. These are the rules that keep it honest.
+
+## Test the real entry path
+
+Test **the artefact you ship**, not only the source that produced it. A generator can be perfectly
+tested while emitting output its consumer cannot load — a wrong field name parses fine and fails
+silently in someone else's session.
+
+If you generate config, a manifest, a bundle or a binary: read the generated file back and assert
+its shape. If you publish a `bin`, run the built one, not the source through a dev loader.
+
+**Derive the shape from a working example, not from memory.** Most format bugs are written
+confidently by someone who has seen the format before.
+
+## Verify the world, not the self-report
+
+An end-to-end assertion re-runs the command or re-reads the file **externally**. Checking the
+agent's own summary for a keyword lets a cheating agent pass — and long-horizon agents demonstrably
+do cheat: weakening tests, special-casing known inputs, deleting assertions, editing expected
+output.
+
+- Re-read the file; assert untouched files are byte-identical.
+- Keep core assertions immutable and separate from the code under change.
+- Treat modifications to the test infrastructure itself as a signal, not a detail.
+
+## A guard only guards if the regression fails it
+
+After adding a check, **introduce the bug it was written for, watch it go red, then revert.** An
+untested guard is a comment with a runtime cost.
+
+This is not optional for safety checks, provenance checks and format assertions — the ones nobody
+exercises by accident during normal work.
+
+## Mock only the expensive boundary
+
+Mock the model, the network and the clock. Keep everything downstream real. A hand-rolled
+stand-in proves the bridge moves bytes, not that the shipping code behaves as asserted. Prefer the
+real tool with a scripted model over a fake tool with a real one.
+
+## Coverage is necessary, never sufficient
+
+It proves lines ran, not that the feature works as shipped. Useful inversion: **an uncovered line
+is often dead code the gate is correctly flagging for deletion**, not a missing test to bolt on.
 ## tool-discipline
 
 Use the purpose-built tool. Shelling out to do a file operation loses structure, costs tokens,

@@ -75,17 +75,23 @@ function buildHooks(harnessRoot: string, pluginDir: string): void {
 
   const run = (script: string) => `bun run "\${CLAUDE_PLUGIN_ROOT}/hooks/${script}"`;
 
+  // The event map lives under a `hooks` key — verified against every installed plugin
+  // that ships hooks. Emitting the events at the top level parses fine and silently
+  // never fires, which is why adapters.test.ts asserts the shape.
   write(
     join(destDir, 'hooks.json'),
     JSON.stringify(
       {
-        PreToolUse: [
-          { matcher: 'Bash', hooks: [{ type: 'command', command: run('guard-destructive.ts'), timeout: 5 }] },
-        ],
-        // Records a normalised, redacted shape of each tool result so `atrix observe`
-        // can find recurring failures. See the privacy note in the hook itself.
-        PostToolUse: [{ hooks: [{ type: 'command', command: run('record-trace.ts'), timeout: 5 }] }],
-        SessionStart: [{ hooks: [{ type: 'command', command: run('session-context.ts'), timeout: 5 }] }],
+        description: 'Atrix harness — safety guard, trace recorder, session context.',
+        hooks: {
+          PreToolUse: [
+            { matcher: 'Bash', hooks: [{ type: 'command', command: run('guard-destructive.ts'), timeout: 5 }] },
+          ],
+          // Records a normalised, redacted shape of each tool result so `atrix observe`
+          // can find recurring failures. See the privacy note in the hook itself.
+          PostToolUse: [{ hooks: [{ type: 'command', command: run('record-trace.ts'), timeout: 5 }] }],
+          SessionStart: [{ hooks: [{ type: 'command', command: run('session-context.ts'), timeout: 5 }] }],
+        },
       },
       null,
       2,
@@ -165,7 +171,7 @@ function buildClaude(harnessRoot: string, core: CoreSet, agentsMd: string): numb
       author: { name: 'Atrix' },
     };
     // Only atrix-core carries enforcement; the skill plugins are content only.
-    if (p.name === 'atrix-core') manifest['hooks'] = './hooks/hooks.json';
+    if (p.name === 'atrix-core') manifest['hooks'] = ['./hooks/hooks.json'];
     if (p.name === 'atrix-graphs') manifest['mcpServers'] = './.mcp.json';
     write(join(out, 'plugins', p.name, '.claude-plugin', 'plugin.json'), JSON.stringify(manifest, null, 2));
   }

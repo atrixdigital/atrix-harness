@@ -3,6 +3,7 @@ name: typescript-strict
 description: TypeScript conventions for Atrix repos — strict mode settings, and the Zod patterns that break under them.
 source: incident-0001
 applies: [**/*.ts, **/*.tsx]
+expires_when: Zod resolves .default() input/output types identically, or the repo moves off Zod
 ---
 
 Strict mode, ES modules, `const` over `let`, never `var`. Destructure imports and props.

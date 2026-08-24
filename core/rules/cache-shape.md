@@ -3,6 +3,7 @@ name: cache-shape
 description: Keeping the stable part of a prompt byte-identical so it rides the prompt cache — the largest input-cost lever available.
 source: research-caching-2026
 applies: [**]
+expires_when: providers cache semantically rather than byte-identically, making prefix stability irrelevant
 ---
 
 Prompt caching charges cached input at roughly a tenth of fresh input. On an agent loop the

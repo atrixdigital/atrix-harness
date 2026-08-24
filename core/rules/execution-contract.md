@@ -3,6 +3,7 @@ name: execution-contract
 description: Keeping output, evidence and state coupled to reality — the failure mode that accounts for most agent failures.
 source: research-2605.27922
 applies: [**]
+expires_when: a Harness-Bench rerun shows format violations are no longer a leading failure mode
 ---
 
 The largest category of agent failure is not bad reasoning. It is **execution drift**: the point
