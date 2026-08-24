@@ -1,7 +1,6 @@
 # Atrix — agent operating manual
 
-You are working inside an Atrix repository. This file is the entry point for **every** agent
-(Claude Code, Codex, Cursor, Gemini, Copilot, Grok) however it was launched — directly or via Orca.
+The entry point for **every** agent — Claude Code, Codex, Cursor, Gemini, Grok — however launched.
 
 ## Before you act
 
@@ -14,10 +13,9 @@ You are working inside an Atrix repository. This file is the entry point for **e
 
 ## While you work
 
-- Follow `core/rules/` for conventions and `core/methodology/` for how to approach the work.
-- Load a skill from `core/skills/` when one covers the task; do not re-derive what one encodes.
-- Prefer editing an existing file over creating a new one.
-- One task at a time. Finish it before starting the next.
+- Follow `core/rules/` and `core/methodology/`; load a skill from `core/skills/` when one covers
+  the task rather than re-deriving what it encodes.
+- Prefer editing an existing file over creating one. One task at a time.
 - Never guess at architecture. Read the code, query the graph, or ask.
 
 ## Recovery — bounded, always
@@ -34,17 +32,16 @@ repeating an identical call with an identical result is not recovery.
   one you preferred. Format violations are the single largest category of agent failure (36.4%).
 - **Commit the artifact.** Written to disk, at the promised path. Then read it back. Work that
   exists only in your reasoning does not exist.
-- **Verify.** Run the repo's typecheck, lint and the relevant tests. Report real output. Never
-  report a result you inferred as one you observed — "not verified" is a useful status.
+- **Verify.** Run the repo's typecheck, lint and relevant tests; report real output. Never report
+  an inferred result as an observed one — "not verified" is a useful status.
 - **Never self-grade.** For non-trivial work, hand it to the `evaluator` role with a written rubric.
   Self-evaluation is unreliable — models rate their own mediocre output highly.
 
 ## When you learn something
 
-If you hit a problem that cost real time — a gotcha, a wrong assumption, a repeated correction —
-run `/learn` (or `atrix learn`). It writes an incident to `learning/incidents/`, which becomes a
-reviewed change to this system. **This is how the harness gets better.** A fix that stays in one
-session helps one person once; a fix that lands here helps everyone forever.
+Hit a problem that cost real time — a gotcha, a wrong assumption, a repeated correction? Run
+`/learn`. It writes an incident that becomes a reviewed change to this system. A fix that stays in
+one session helps one person once; a fix that lands here helps everyone forever.
 
 ## Safety
 
