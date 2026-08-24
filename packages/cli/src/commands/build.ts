@@ -80,7 +80,9 @@ function buildHooks(harnessRoot: string, pluginDir: string): void {
   // Tests live beside the hooks they cover; they are not part of the shipped plugin.
   cpSync(src, destDir, { recursive: true, filter: (from) => !from.endsWith('.test.ts') });
 
-  const run = (script: string) => `bun run "\${CLAUDE_PLUGIN_ROOT}/hooks/${script}"`;
+  // The plugin root is passed as an argument, not left to the environment: the runtime
+  // expands ${CLAUDE_PLUGIN_ROOT} when it builds this command, which is a guarantee.
+  const run = (script: string) => `bun run "\${CLAUDE_PLUGIN_ROOT}/hooks/${script}" "\${CLAUDE_PLUGIN_ROOT}"`;
 
   // The event map lives under a `hooks` key — verified against every installed plugin
   // that ships hooks. Emitting the events at the top level parses fine and silently

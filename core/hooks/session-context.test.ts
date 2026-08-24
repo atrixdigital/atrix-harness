@@ -141,3 +141,76 @@ describe('un-onboarded projects', () => {
     expect(run()).toBe('');
   });
 });
+
+describe('the rule bundle reaches the model', () => {
+  /**
+   * The regression this guards is the worst one this repo has had: the bundle was
+   * generated into the plugin and loaded by nothing, so Claude Code sessions ran with
+   * no rules at all for the whole life of the adapter. Every structural check passed
+   * while that was true — the file existed, the manifests validated, the tests were
+   * green — because none of them asked whether a model ever saw the bytes.
+   *
+   * This asserts the delivery mechanism. The live query that proved the bug is in
+   * learning/incidents/incident-2026-08-25-*.
+   */
+  function runWithPlugin(pluginRoot: string): string {
+    const proc = Bun.spawnSync(['bun', 'run', HOOK, pluginRoot], {
+      cwd: workspace,
+      stdin: new TextEncoder().encode('{"session_id":"s"}'),
+      stdout: 'pipe',
+      stderr: 'pipe',
+      env: { ...process.env, ATRIX_HOME: '' },
+    });
+    const out = proc.stdout.toString().trim();
+    if (out === '') return '';
+    return (JSON.parse(out) as { hookSpecificOutput: { additionalContext: string } }).hookSpecificOutput.additionalContext;
+  }
+
+  test('emits the bundle found beside it in the plugin', () => {
+    const pluginRoot = join(workspace, 'plugin');
+    mkdirSync(pluginRoot, { recursive: true });
+    writeFileSync(join(pluginRoot, 'AGENTS.md'), '# Manual\n\n## bounded-recovery\n\nretry, patch, replan.\n');
+
+    const context = runWithPlugin(pluginRoot);
+    expect(context).toContain('bounded-recovery');
+    expect(context).toContain('retry, patch, replan');
+  });
+
+  test('puts the rules before the per-session notes', () => {
+    // Rules are byte-identical between sessions and belong in the cacheable prefix;
+    // notes vary and must sit below. See core/rules/cache-shape.md.
+    const pluginRoot = join(workspace, 'plugin');
+    mkdirSync(pluginRoot, { recursive: true });
+    writeFileSync(join(pluginRoot, 'AGENTS.md'), '# Manual\n\nRULE CONTENT HERE\n');
+    seedDb([{ kind: 'conflicting', name: 'DATABASE_URL' }]);
+
+    const context = runWithPlugin(pluginRoot);
+    expect(context.indexOf('RULE CONTENT HERE')).toBeLessThan(context.indexOf('DATABASE_URL'));
+  });
+
+  test('still starts a session when the bundle is missing', () => {
+    // Degraded is workable; failing to start is not.
+    const pluginRoot = join(workspace, 'empty-plugin');
+    mkdirSync(pluginRoot, { recursive: true });
+    seedDb([{ kind: 'conflicting', name: 'DATABASE_URL' }]);
+
+    expect(runWithPlugin(pluginRoot)).toContain('DATABASE_URL');
+  });
+
+  test('emits valid single-line JSON even with a large bundle', () => {
+    // 36KB of markdown with quotes, backticks and newlines through JSON.stringify.
+    const pluginRoot = join(workspace, 'plugin');
+    mkdirSync(pluginRoot, { recursive: true });
+    writeFileSync(join(pluginRoot, 'AGENTS.md'), `# Manual\n\n${'`code` "quoted" line\n'.repeat(800)}`);
+
+    const proc = Bun.spawnSync(['bun', 'run', HOOK, pluginRoot], {
+      cwd: workspace,
+      stdin: new TextEncoder().encode('{"session_id":"s"}'),
+      stdout: 'pipe',
+      env: { ...process.env, ATRIX_HOME: '' },
+    });
+    const line = proc.stdout.toString().trim();
+    expect(line.split('\n')).toHaveLength(1);
+    expect(() => JSON.parse(line)).not.toThrow();
+  });
+});

@@ -218,6 +218,29 @@ because the word *they* appeared in it.
 Exposed as `atrix recall` and the `atrix_recall` MCP tool, and named in `AGENTS.md` — a knowledge
 base agents do not know to ask is a knowledge base nobody reads.
 
+### How the rules actually reach each agent
+
+Not the same way, and the difference mattered more than expected.
+
+| Agent | Mechanism |
+|---|---|
+| Codex, Gemini | handed `adapters/*/AGENTS.md` directly — the bundle *is* the file they load |
+| Cursor | `.cursor/rules/*.mdc`, one per rule, glob-scoped |
+| **Claude Code** | the SessionStart hook injects the bundle via `additionalContext` |
+
+The Claude path exists because **plugins ship skills, agents, commands, hooks and MCP servers —
+not rule files.** A bundle placed inside the plugin is loaded by nothing; `claude plugin details`
+lists no such component. That was true here for the entire life of the adapter, and a live session
+asked for a rule and answered *"NOT LOADED"* while every offline check passed.
+
+The general lesson is in `learning/incidents/incident-2026-08-25-*`: **structural verification
+cannot answer "does the model see this".** The file existed, the manifests validated, the tests
+were green, and none of that was the question.
+
+So `doctor` now runs `claude plugin validate` when the CLI is present — it was available from the
+first day and nobody ran it — and anything whose purpose is to reach a model gets one live
+assertion per delivery path.
+
 ## Rule or skill? The decision that keeps this sustainable
 
 The most common contribution mistake is writing a rule for something that should be a skill.

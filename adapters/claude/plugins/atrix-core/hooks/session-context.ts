@@ -1,6 +1,15 @@
 #!/usr/bin/env bun
 /**
- * SessionStart context.
+ * SessionStart context, and the rule bundle.
+ *
+ * Claude Code plugins ship skills, agents, hooks and MCP servers — **not rule files**.
+ * The bundle this repo generates into the plugin was never loaded by anything: a live
+ * session asked for the bounded-recovery levels and answered "NOT LOADED", while Codex
+ * and Gemini, which read the bundle file directly, had every rule.
+ *
+ * `additionalContext` is the mechanism that closes it. The rules ride the same payload as
+ * the situational notes below, so a Claude session pays the same always-on cost for the
+ * same content as every other agent — which is what "org-wide rules" has to mean.
  *
  * Harness-Bench's first recommendation for harness designers is **execution legibility**:
  * make pending obligations, observed evidence and recoverable failures explicit rather
@@ -21,6 +30,30 @@ import { dirname, join } from 'node:path';
 import { clusterFailures, describeCluster, readTrace } from './lib/trace.ts';
 
 const INDEX_STALE_HOURS = 24;
+
+/**
+ * The generated bundle, shipped beside this hook inside the plugin.
+ *
+ * Passed as argv rather than read from the environment: `${CLAUDE_PLUGIN_ROOT}` is
+ * expanded by the runtime when it builds the command, which is a guarantee, where the
+ * variable surviving into the child process is an assumption.
+ */
+function ruleBundle(): string | undefined {
+  const pluginRoot = process.argv[2];
+  if (pluginRoot === undefined || pluginRoot === '') return undefined;
+
+  const path = join(pluginRoot, 'AGENTS.md');
+  if (!existsSync(path)) return undefined;
+
+  try {
+    const text = readFileSync(path, 'utf8').trim();
+    return text === '' ? undefined : text;
+  } catch {
+    // A session without the rules is degraded but workable; one that fails to start
+    // is not. Never let this be the thing that breaks a session.
+    return undefined;
+  }
+}
 
 function findUp(marker: string, from: string): string | undefined {
   let dir = from;
@@ -141,13 +174,22 @@ if (existsSync(dbPath)) {
   }
 }
 
+const bundle = ruleBundle();
+
+// Rules first, situational notes after. The bundle is byte-identical between sessions,
+// so it sits in the cacheable prefix; the notes vary per session and belong below it.
+// See core/rules/cache-shape.md — ordering this the other way costs a full uncached
+// prefix on every turn.
+const sections: string[] = [];
+if (bundle !== undefined) sections.push(bundle);
 if (notes.length > 0) {
+  sections.push(`## Right now\n\nThings worth knowing before you start:\n${notes.map((n) => `- ${n}`).join('\n')}`);
+}
+
+if (sections.length > 0) {
   console.log(
     JSON.stringify({
-      hookSpecificOutput: {
-        hookEventName: 'SessionStart',
-        additionalContext: `Atrix harness — things worth knowing before you start:\n${notes.map((n) => `- ${n}`).join('\n')}`,
-      },
+      hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: sections.join('\n\n---\n\n') },
     }),
   );
 }

@@ -15,6 +15,8 @@ the knowledge that otherwise gets rediscovered and re-argued every six months.
 
 | 2026-08-24 | [0005](incidents/incident-0005-loop-guard-verified-with-zsh.md) | **merged** | `hook-output.test.ts` + a note in testing-policy. zsh's `echo` interprets `\n`, so the verification harness corrupted valid JSON and manufactured a 20-minute bug hunt. Prefer an in-process test to a shell demo when output involves escaping. |
 
+| 2026-08-25 | [rule-bundle](incidents/incident-2026-08-25-rule-bundle-never-reached-claude-code.md) | **merged** | SessionStart now injects the rule bundle. Claude Code plugins ship skills/agents/hooks/MCP — not rule files — so all 18 rules were inert for Claude users while Codex and Gemini had them. Every structural check passed throughout. Also: `doctor` now runs `claude plugin validate`, which existed all along. |
+
 ## Pruned
 
 Nothing yet, but pruning is now mechanical rather than aspirational: rules may declare

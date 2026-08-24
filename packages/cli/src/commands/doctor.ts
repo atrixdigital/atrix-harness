@@ -79,6 +79,22 @@ export function doctor(harnessRoot: string, projectRoot: string): boolean {
     detail: dangling.length === 0 ? undefined : `${dangling.length} dangling citation(s)`,
   });
 
+  // The agent runtime ships its own validator and it was available from the first day
+  // this adapter existed. Nobody ran it, and a shape bug lived for weeks as a result.
+  const marketplaceDir = join(p.adapters, 'claude');
+  if (existsSync(join(marketplaceDir, '.claude-plugin', 'marketplace.json'))) {
+    const probe = Bun.spawnSync(['which', 'claude'], { stdout: 'pipe', stderr: 'pipe' });
+    if (probe.exitCode === 0) {
+      const result = Bun.spawnSync(['claude', 'plugin', 'validate', marketplaceDir], { stdout: 'pipe', stderr: 'pipe' });
+      const output = `${result.stdout.toString()}${result.stderr.toString()}`.trim();
+      checks.push({
+        name: 'claude accepts the generated marketplace',
+        ok: result.exitCode === 0,
+        detail: result.exitCode === 0 ? undefined : output.split('\n').slice(-2).join(' '),
+      });
+    }
+  }
+
   const adaptersBuilt = existsSync(join(p.adapters, 'claude', '.claude-plugin', 'marketplace.json'));
   checks.push({
     name: 'adapters built',
