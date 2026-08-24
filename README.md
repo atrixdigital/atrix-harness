@@ -46,7 +46,23 @@ Point the agent at the generated bundle — `adapters/codex/AGENTS.md`,
 
 ```bash
 cd ~/your-project
-atrix init      # writes AGENTS.md, CLAUDE.md, .atrix/config.json
+atrix init      # AGENTS.md, CLAUDE.md, .atrix/config.json, and the graph MCP server
+atrix index     # build the code graph
+```
+
+`init` merges into an existing `.mcp.json` rather than replacing it, never overwrites an
+`AGENTS.md` you already have, and records which harness commit you started from.
+
+### Staying current
+
+```bash
+atrix sync      # pull the harness, rebuild adapters, and print what it learned
+```
+
+`atrix doctor` tells you when your repo is behind:
+
+```
+✗ harness up to date — 3 harness commit(s) behind — run `atrix sync`
 ```
 
 ---

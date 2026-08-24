@@ -4,6 +4,7 @@ import { distill } from './commands/distill.ts';
 import { doctor } from './commands/doctor.ts';
 import { runEval } from './commands/eval.ts';
 import { runIndex } from './commands/index-repo.ts';
+import { sync } from './commands/sync.ts';
 import { init } from './commands/init.ts';
 import { learn } from './commands/learn.ts';
 import { lint } from './commands/lint.ts';
@@ -25,7 +26,7 @@ ${bold('Commands')}
   ${cyan('learn')} <title>      Capture an incident — the start of the learning loop
   ${cyan('distill')} [id]       Turn an incident into a proposed change; lists pending if no id
   ${cyan('index')}              Build the code graph for this repository
-  ${cyan('sync')}               Pull the latest org-wide source graph        ${dim('(phase 6)')}
+  ${cyan('sync')}               Pull the latest harness and rebuild adapters
   ${cyan('eval')}               Which layers are measured; --run to measure them
 
 ${bold('Eval')}
@@ -36,13 +37,6 @@ ${bold('Eval')}
 ${bold('Environment')}
   ATRIX_HOME         Path to the atrix-harness checkout (otherwise found by walking up)
 `;
-
-function notYet(command: string, phase: string): never {
-  throw new AtrixError(
-    `\`atrix ${command}\` is not implemented yet — it lands in ${phase}.`,
-    'See docs/ARCHITECTURE.md for the phase plan.',
-  );
-}
 
 async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv;
@@ -95,7 +89,7 @@ async function main(argv: string[]): Promise<number> {
       runIndex(projectRoot);
       return 0;
     case 'sync':
-      return notYet('sync', 'phase 6');
+      return sync(harnessRoot, projectRoot, rest) ? 0 : 1;
     case 'eval':
       return (await runEval(harnessRoot, rest)) ? 0 : 1;
 

@@ -2,6 +2,8 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadCore } from '../lib/core.ts';
 import { danglingProvenance, listIncidents } from '../lib/incidents.ts';
+import { driftReport } from './sync.ts';
+import { describe, harnessVersion } from '../lib/version.ts';
 import { log } from '../lib/log.ts';
 import { harnessPaths } from '../lib/paths.ts';
 
@@ -25,7 +27,12 @@ export function doctor(harnessRoot: string, projectRoot: string): boolean {
   const p = harnessPaths(harnessRoot);
   const checks: Check[] = [];
 
-  checks.push({ name: 'harness located', ok: true, detail: harnessRoot });
+  checks.push({ name: 'harness located', ok: true, detail: `${harnessRoot} @ ${describe(harnessVersion(harnessRoot))}` });
+
+  // A repo silently running a months-old rule set is the failure mode that makes the
+  // whole learning loop pointless.
+  const drift = driftReport(harnessRoot, projectRoot);
+  if (drift !== undefined) checks.push({ name: 'harness up to date', ok: false, detail: drift });
 
   const agentsExists = existsSync(p.agentsMd);
   if (agentsExists) {

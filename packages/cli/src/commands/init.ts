@@ -1,14 +1,58 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join, relative, sep } from 'node:path';
 import { log } from '../lib/log.ts';
+import { harnessVersion } from '../lib/version.ts';
 
 /**
  * Scaffold a consuming repository.
  *
- * Only what genuinely must live inside the repo goes here: the pointer to the
- * harness, repo-specific conventions, and index config. Everything shared stays
- * in the harness so it can be updated centrally.
+ * Only what genuinely must live inside the repo goes here: the pointer to the harness,
+ * repo-specific conventions, index config, and the MCP wiring. Everything shared stays in
+ * the harness so it can be updated centrally.
+ *
+ * The MCP wiring is not optional. AGENTS.md instructs every agent to reach for
+ * `atrix_search` and `atrix_impact` before reading files; shipping that instruction
+ * without the tools produces an agent that tries, fails, and falls back — worse than
+ * never having promised them.
  */
+
+const ATRIX_MCP_KEY = 'atrix-graph';
+
+/** Merge our server into whatever the repo already has, without touching the rest. */
+function wireMcp(projectRoot: string, created: string[], skipped: string[]): void {
+  const file = join(projectRoot, '.mcp.json');
+  const server = {
+    type: 'stdio',
+    command: 'bun',
+    args: ['run', '${ATRIX_HOME}/packages/graph-mcp/src/server.ts'],
+  };
+
+  if (!existsSync(file)) {
+    writeFileSync(file, `${JSON.stringify({ mcpServers: { [ATRIX_MCP_KEY]: server } }, null, 2)}\n`, 'utf8');
+    created.push('.mcp.json');
+    return;
+  }
+
+  let existing: Record<string, unknown>;
+  try {
+    existing = JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
+  } catch {
+    // Never overwrite a file we cannot parse — it may hold another team's config.
+    log.warn('.mcp.json exists but is not valid JSON — add the atrix-graph server by hand');
+    return;
+  }
+
+  const servers = (existing['mcpServers'] ?? existing) as Record<string, unknown>;
+  if (ATRIX_MCP_KEY in servers) {
+    skipped.push('.mcp.json (atrix-graph already configured)');
+    return;
+  }
+
+  servers[ATRIX_MCP_KEY] = server;
+  const merged = 'mcpServers' in existing ? existing : { mcpServers: servers };
+  writeFileSync(file, `${JSON.stringify(merged, null, 2)}\n`, 'utf8');
+  created.push('.mcp.json (merged in atrix-graph)');
+}
 
 export function init(harnessRoot: string, projectRoot: string): void {
   if (harnessRoot === projectRoot) {
@@ -34,15 +78,17 @@ export function init(harnessRoot: string, projectRoot: string): void {
   // `../../../../..` noise once the project lives elsewhere. Fall back to absolute.
   const rel = relative(projectRoot, harnessRoot);
   const harnessRel = rel === '' || rel.split(sep).filter((s) => s === '..').length > 2 ? harnessRoot : rel;
+  const version = harnessVersion(harnessRoot);
 
   put(
     '.atrix/config.json',
     `${JSON.stringify(
       {
-        harness: { version: '0.1.0', path: harnessRel },
+        // Recorded so `doctor` can tell you how far behind the shared harness you are.
+        harness: { version: version.version, commit: version.commit ?? null, path: harnessRel },
         index: { include: ['src', 'app', 'packages', 'apps'], exclude: ['node_modules', 'dist', '.next'] },
-        // Off by default: most Atrix repos are private client work and code
-        // chunks must never leave the machine without an explicit decision.
+        // Off by default: most Atrix repos are private client work and code chunks must
+        // never leave the machine without an explicit decision.
         semantic: { provider: null },
       },
       null,
@@ -86,10 +132,9 @@ Repo-specific context below overrides the harness on conventions, never on safet
 `,
   );
 
-  put(
-    'CLAUDE.md',
-    `# Pointer\n\nRead **[AGENTS.md](./AGENTS.md)**, then \`${harnessRel}/AGENTS.md\`.\n`,
-  );
+  put('CLAUDE.md', `# Pointer\n\nRead **[AGENTS.md](./AGENTS.md)**, then \`${harnessRel}/AGENTS.md\`.\n`);
+
+  wireMcp(projectRoot, created, skipped);
 
   // The index and the trace are local-only. The trace is redacted by construction, but
   // it should still never reach a remote.
@@ -107,6 +152,7 @@ Repo-specific context below overrides the harness on conventions, never on safet
 
   log.blank();
   log.info('Next:');
-  log.detail('1. Fill in Stack and Commands in AGENTS.md');
-  log.detail('2. Run `atrix index` to build the code graph (phase 3)');
+  log.detail(`1. export ATRIX_HOME="${harnessRoot}"   (the MCP server resolves it at launch)`);
+  log.detail('2. atrix index                          — build the code graph');
+  log.detail('3. Fill in Stack, Commands and Gotchas in AGENTS.md');
 }

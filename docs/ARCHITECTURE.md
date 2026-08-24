@@ -57,7 +57,12 @@ churn nobody triages, and a rule reaching every repo in the org needs a human.
    one-off workarounds.
 3. **Gate** — a PR. **Always human-reviewed.** This is read by every repo in the org; auto-merge
    is a way to poison all of them at once.
-4. **Propagate** — merge, tag, `atrix sync` / `/plugin marketplace update`.
+4. **Propagate** — `atrix sync` fast-forwards the harness, rebuilds the adapters, and prints the
+   new `learning/CHANGELOG.md` entries, because an update nobody reads is an update nobody applies.
+   Consuming repos record the harness commit they were initialised against, so `atrix doctor`
+   reports drift (`3 harness commit(s) behind`) instead of leaving a repo silently running a
+   months-old rule set. `sync` refuses a dirty checkout — silently stashing someone's in-progress
+   rule edit to fetch a different one is not a trade this tool gets to make.
 5. **Prune** — evals flag rules that no longer change any outcome. See RESEARCH.md §2.
 
 ### The provenance invariant
