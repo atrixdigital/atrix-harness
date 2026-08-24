@@ -3,6 +3,7 @@ import { build } from './commands/build.ts';
 import { distill } from './commands/distill.ts';
 import { doctor } from './commands/doctor.ts';
 import { runEnv } from './commands/env.ts';
+import { runRecall } from './commands/recall.ts';
 import { runEval } from './commands/eval.ts';
 import { runIndex } from './commands/index-repo.ts';
 import { sync } from './commands/sync.ts';
@@ -23,6 +24,7 @@ ${bold('Commands')}
   ${cyan('init')}               Scaffold the current repository to use the harness
   ${cyan('doctor')}             Check the harness is wired up correctly
   ${cyan('lint')}               Check skills against the authoring rules
+  ${cyan('recall')} <question>  Ask the knowledge base — incidents, understandings, ADRs
   ${cyan('observe')}            Mine the local trace for recurring failure patterns
   ${cyan('learn')} <title>      Capture an incident — the start of the learning loop
   ${cyan('distill')} [id]       Turn an incident into a proposed change; lists pending if no id
@@ -80,6 +82,9 @@ async function main(argv: string[]): Promise<number> {
       return 0;
     }
 
+    case 'recall':
+      return runRecall(projectRoot, rest) ? 0 : 1;
+
     case 'observe':
       observe(projectRoot);
       return 0;
@@ -88,7 +93,7 @@ async function main(argv: string[]): Promise<number> {
       distill(harnessRoot, rest[0]);
       return 0;
     case 'index':
-      runIndex(projectRoot);
+      runIndex(projectRoot, harnessRoot);
       return 0;
 
     case 'env':

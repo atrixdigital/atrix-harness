@@ -12,7 +12,9 @@ import {
   collectEnvReads,
   context,
   createProgramFor,
+  getNote,
   impact,
+  recall,
   open,
   search,
   type SymbolRow,
@@ -180,6 +182,36 @@ server.tool(
         blocking.map((f) => `\n${f.kind.toUpperCase()}  ${f.name}\n  ${f.detail}\n  ${f.locations.join(', ')}`).join(''),
     );
   },
+);
+
+server.tool(
+  'atrix_recall',
+  'Ask why something is the way it is. Searches recorded incidents, architecture understandings, ADRs and handoffs — the reasoning, constraints and history that the code does not state. Use BEFORE tracing an unclear mechanism from scratch, when a design looks odd, or to check whether an approach was already tried and rejected.',
+  {
+    question: z.string().describe('A natural question, e.g. "why do we commit generated adapters"'),
+    full: z.boolean().default(false).describe('Return the single best note in full instead of ranked snippets.'),
+  },
+  ({ question, full }) =>
+    text(
+      withDb((db) => {
+        const hits = recall(db, question, full ? 1 : 6);
+        if (hits.length === 0) {
+          return `Nothing recorded about that. If you work it out, record it — an UNDERSTANDINGS.md entry or \`atrix learn\` stops the next session re-deriving it.`;
+        }
+
+        if (full) {
+          const note = getNote(db, hits[0]?.ref ?? '');
+          return note === undefined ? 'Not found.' : `${note.title}\n${note.kind} · ${note.path}\n\n${note.body}`;
+        }
+
+        return hits
+          .map((h) => {
+            const meta = [h.kind, h.date, h.status].filter((v) => v !== undefined).join(' · ');
+            return `${h.title}  [${meta}]\n  ${h.snippet}\n  ${h.path}`;
+          })
+          .join('\n\n');
+      }) as string,
+    ),
 );
 
 await server.connect(new StdioServerTransport());

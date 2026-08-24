@@ -123,6 +123,29 @@ Run against `PlayO-web` on its first outing it found four conflicting definition
 `DATABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in both `.env` and `.env.local` with different
 values.
 
+### The information graph
+
+The code graph answers *what calls what*. This answers *why is it like that*, *what broke last
+time we touched this*, and *did we already try that* — the questions that otherwise make every
+session start from zero.
+
+Two decisions do most of the work:
+
+- **A note is a section, not a file.** `UNDERSTANDINGS.md` holds many independent claims;
+  returning the whole file for a query about one buries the answer. Splitting on `##` makes each
+  entry separately retrievable, dated and individually markable as superseded.
+- **Both roots are indexed.** Org-wide incidents live in the harness, repo-specific understandings
+  live in the project, and the useful question spans them. Harness notes are labelled so their
+  origin stays visible.
+
+Storage is SQLite FTS5, already in Bun. Queries are natural questions, so the expression is built
+from terms rather than passed through — FTS5 treats `why did we choose X?` as syntax and throws on
+the `?`. Stop-word filtering is not cosmetic: under-filtering ranked an unrelated note first
+because the word *they* appeared in it.
+
+Exposed as `atrix recall` and the `atrix_recall` MCP tool, and named in `AGENTS.md` — a knowledge
+base agents do not know to ask is a knowledge base nobody reads.
+
 ## Rule or skill? The decision that keeps this sustainable
 
 The most common contribution mistake is writing a rule for something that should be a skill.
@@ -154,7 +177,7 @@ almost always that a rule should have been a skill.
 |---|---|---|
 | Code | **done** | **Built** on the TypeScript compiler API + `bun:sqlite`. See the reversal below. |
 | Dependency / impact | phase 6 | **Build.** Workspace packages ↔ migrations ↔ env vars ↔ service-to-service calls. Nothing off-the-shelf models this. |
-| Information | phase 6 | **Build.** Knowledge, handoffs, ADRs and `learning/` itself, as a queryable graph. |
+| Information | **done** | **Built.** Incidents, understandings, ADRs and handoffs in SQLite FTS5. See below. |
 | Source (org-wide) | phase 6 | **Build the federation.** Nightly CI indexes every `atrixdigital` repo → release artifact → `atrix sync`. Nobody indexes 25 repos locally. |
 
 ### Why we built the code graph instead of wrapping one
@@ -194,12 +217,12 @@ explicit decision. Adapters planned for Ollama (local), Voyage and OpenAI.
 |---|---|---|
 | 0 | Spine — `AGENTS.md`, CLI, adapter generator, seed core | **done** |
 | 1 | Core harness — full rule set, roles, hooks, tool budgets | **done** |
-| 2 | Learning loop — `distill`, PR gate, provenance CI | next |
+| 2 | Learning loop — `distill`, PR gate, provenance CI, observability | **done** |
 | 3 | Code graph — indexer, query layer, MCP server | **done** |
-| 4 | Skill library — template, linter, harvest, write the taxonomy | next (linter done) |
-| 5 | Playbooks — the six orchestration patterns, file-based handoffs | |
-| 6 | Remaining graphs — dependency, information, org-wide source | |
-| 7 | Evals — framework, ablation, anti-gaming | **done** (1 case) |
+| 4 | Skill library — template, linter, harvest, 13 skills | **done** (ongoing) |
+| 5 | Loop engineering — bounded recovery enforced by hooks | **done** |
+| 6 | Graphs — code, environment, information | **done**; org-wide source deferred |
+| 7 | Evals — framework, ablation, anti-gaming | **done**; 1 of 31 layers covered |
 
 Phase 2 is deliberately early: once the loop runs, every later phase feeds itself.
 

@@ -9,30 +9,28 @@ You are working inside an Atrix repository. This file is the entry point for **e
 
 ## Before you act
 
-- **Read before you change.** Use the graph tools (`atrix_search`, `atrix_context`, `atrix_callers`,
-  `atrix_impact`) rather than reading files one by one. Check `atrix_impact` before editing shared
-  code — know the blast radius first.
+- **Read before you change.** Use the graph tools (`atrix_search`, `atrix_context`, `atrix_impact`)
+  rather than reading files one by one. Check `atrix_impact` before editing shared code.
+- **Ask why before assuming.** `atrix_recall` searches recorded incidents and architecture
+  decisions. If a design looks odd, someone probably wrote down why.
 - **Ask when the answer changes the work.** Route judgement calls yourself; escalate only when two
   readings lead to materially different output.
 
 ## While you work
 
 - Follow `core/rules/` for conventions and `core/methodology/` for how to approach the work.
-- Load a skill from `core/skills/` when one covers the task. Do not re-derive what a skill encodes.
+- Load a skill from `core/skills/` when one covers the task; do not re-derive what one encodes.
 - Prefer editing an existing file over creating a new one.
 - One task at a time. Finish it before starting the next.
 - Never guess at architecture. Read the code, query the graph, or ask.
 
 ## Recovery — bounded, always
 
-When something fails, escalate in exactly three levels and stop:
+When something fails: **retry** (×2, same approach) → **patch** (×2, adjust on the error) →
+**replan** (new plan version, never mutate the old). Then **stop and report**.
 
-1. **Retry** — transient failure, same approach. Max 2.
-2. **Patch** — adjust the approach based on the error. Max 2.
-3. **Replan** — the plan was wrong. Write a new plan version; never mutate the old one in place.
-
-After level 3 fails, **stop and report**. Do not loop. Unbounded retry is the single most
-expensive failure mode in agent systems.
+Do not loop. Unbounded retry is the single most expensive failure mode in agent systems, and
+repeating an identical call with an identical result is not recovery.
 
 ## Before you finish
 
