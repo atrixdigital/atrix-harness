@@ -93,6 +93,31 @@ try {
   // Never let trace bookkeeping delay a session.
 }
 
+// — A project nobody has onboarded. The agent can do the whole thing itself, but only
+//   if it knows there is something to do; a developer who cloned a repo an hour ago has
+//   no reason to suspect the graph tools cannot see it.
+try {
+  const projectsDir = join(workspace, 'projects');
+  if (existsSync(projectsDir)) {
+    const unonboarded = readdirSync(projectsDir).filter(
+      (name) =>
+        !name.startsWith('.') &&
+        statSync(join(projectsDir, name)).isDirectory() &&
+        !existsSync(join(projectsDir, name, 'AGENTS.md')),
+    );
+
+    if (unonboarded.length > 0) {
+      notes.push(
+        `${unonboarded.join(', ')} ${unonboarded.length === 1 ? 'is' : 'are'} in projects/ but not onboarded — ` +
+          'no AGENTS.md, and the graph tools cannot see the code. Offer to set it up: the ' +
+          '`onboarding-a-project` skill covers it end to end.',
+      );
+    }
+  }
+} catch {
+  // A projects directory we cannot read is not worth failing a session over.
+}
+
 // — Index freshness, because impact answers are only as current as the index.
 if (existsSync(dbPath)) {
   const ageHours = (Date.now() - statSync(dbPath).mtimeMs) / 3_600_000;

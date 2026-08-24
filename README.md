@@ -28,13 +28,23 @@ export ATRIX_HOME="$PWD"
 alias atrix="bun run $ATRIX_HOME/packages/cli/src/index.ts"
 ```
 
-Then bring your projects in. They stay independent repos and are gitignored here, so client code
-never merges into the shared harness:
+Then bring your projects in and **ask your agent to set them up**:
 
 ```bash
 git clone git@github.com:you/playo-web.git projects/playo-web
-atrix index --all        # one index across every project
 ```
+
+> "I've cloned playo-web into projects — set it up."
+
+The agent scaffolds it, reads the repo to fill in its stack and real command names, indexes it,
+audits its config, and records what it worked out along the way. It notices an un-onboarded
+project at session start and offers, so you rarely have to ask.
+
+`atrix init` exists and does the scaffold, but the useful half — the parts only reading the code
+can produce — is the agent's job.
+
+Projects stay independent repos and are gitignored here, so client code never merges into the
+shared harness.
 
 ```
 atrix-harness/          ← launch Claude, Codex or Orca here

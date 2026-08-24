@@ -53,13 +53,13 @@ Treat anything named `prod`/`production` as protected.
 
 ## Where you are
 
-This is the **workspace**. Projects live under `projects/`, each an independent repo. Graph
-queries scope to the project you are in; pass `allProjects` to check whether another repo already
-solves the problem.
+This is the **workspace**. Projects live under `projects/`, each an independent repo with its own
+`AGENTS.md` (stack, commands) and `UNDERSTANDINGS.md` (how it works) — read both before working in
+one. Graph queries scope to the project you are in; `allProjects` spans the workspace.
 
-Each project has its own `AGENTS.md` (conventions, stack, commands) and `UNDERSTANDINGS.md` (how
-that system actually works). Read both before working in one. They override nothing here on
-safety, and win on everything else.
+**Setting a project up is your job, not the human's.** A project with no `AGENTS.md` has not been
+onboarded; offer, and use the `onboarding-a-project` skill. Run `atrix index` and `atrix env`
+yourself rather than asking someone to.
 
 ---
 

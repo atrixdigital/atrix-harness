@@ -118,6 +118,22 @@ travel with the code, so whoever clones that project gets them without needing t
 Picking the wrong mode is the destructive case — writing a project's `AGENTS.md` over the org-wide
 manual — so it is asserted by a test rather than left to the resolution logic being right.
 
+### Setup is the agent's job
+
+Making a human run CLI setup in an *agent* harness is a design smell, and for a while this one had
+it: `atrix init` existed, and nothing in the shipped bundle told an agent it did. An agent knew the
+MCP tools and nothing about the workspace lifecycle, so a developer who cloned a repo into
+`projects/` got an agent that could not see the code and did not know why.
+
+Three changes close it. `AGENTS.md` states that setting a project up is the agent's job. The
+`onboarding-a-project` skill covers the whole sequence. And the session-start hook flags any
+project under `projects/` with no `AGENTS.md`, so the offer happens without being asked.
+
+The division that matters: **`atrix init` does the scaffold; the agent does the part that requires
+reading the repo.** A template with blank Stack and Commands sections is worth little — the value
+is a manual that names the real script names, because `type-check` and `typecheck` are both common
+and only one of them exists in any given repo. A human running `init` alone never gets that.
+
 ### Shared versus private
 
 | Shared, committed | Private, gitignored |

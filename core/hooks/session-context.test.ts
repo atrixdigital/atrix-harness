@@ -115,3 +115,29 @@ describe('robustness', () => {
     expect(() => JSON.parse(line)).not.toThrow();
   });
 });
+
+describe('un-onboarded projects', () => {
+  test('flags a project with no AGENTS.md, and names the skill that fixes it', () => {
+    // A developer who cloned a repo an hour ago has no reason to suspect the graph
+    // tools cannot see it. The agent can do the whole setup — but only if it knows
+    // there is something to do.
+    mkdirSync(join(workspace, 'projects', 'freshly-cloned'), { recursive: true });
+    const out = run();
+    expect(out).toContain('freshly-cloned');
+    expect(out).toContain('onboarding-a-project');
+  });
+
+  test('says nothing about a project that has been onboarded', () => {
+    mkdirSync(join(workspace, 'projects', 'done'), { recursive: true });
+    writeFileSync(join(workspace, 'projects', 'done', 'AGENTS.md'), '# done\n');
+    seedDb([]);
+    expect(run()).toBe('');
+  });
+
+  test('ignores dotfiles and the gitkeep placeholder', () => {
+    mkdirSync(join(workspace, 'projects'), { recursive: true });
+    writeFileSync(join(workspace, 'projects', '.gitkeep'), '');
+    seedDb([]);
+    expect(run()).toBe('');
+  });
+});
