@@ -1,9 +1,14 @@
-import { clusterFailures, describeCluster, MIN_RECURRENCE, readTrace, traceFiles } from '../../../../core/hooks/lib/trace.ts';
+import { clusterFailures, describeCluster, MIN_RECURRENCE, readTrace, traceFiles } from '@atrix/hooks/trace.ts';
 import { bold, cyan, dim, log } from '../lib/log.ts';
 import { activeProject } from '../lib/workspace.ts';
 
 /**
  * Mine the trace for failure patterns worth turning into incidents.
+ *
+ * Reads through `@atrix/hooks/*`, which maps to `core/hooks/lib/`. That directory is
+ * copied wholesale into the Claude plugin, so it may not import from `packages/` — which
+ * makes it the correct home for logic both a hook and the CLI need, and makes this the
+ * one direction the dependency can legally run.
  *
  * This is the half of the learning loop that does not depend on somebody remembering. A
  * failure that happened once is noise; the same failure eleven times is a harness gap, and

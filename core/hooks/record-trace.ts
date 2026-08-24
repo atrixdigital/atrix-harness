@@ -166,6 +166,8 @@ async function runAsHook(): Promise<void> {
   try {
     payload = JSON.parse(raw) as Payload;
   } catch {
+    // Malformed payload: nothing useful to record, and a hook must never
+    // interfere with a tool call it failed to understand.
     return;
   }
 

@@ -23,6 +23,9 @@ export function loadState(dir: string): LoopState {
     const parsed = JSON.parse(readFileSync(path, 'utf8')) as unknown;
     return parsed !== null && typeof parsed === 'object' ? (parsed as LoopState) : {};
   } catch {
+    // A corrupt or half-written state file resets the chain. This is a heuristic
+    // nudge, not a logged invariant — losing a chain costs one late reminder, where
+    // failing here would cost the tool call.
     return {};
   }
 }
@@ -44,6 +47,8 @@ export function configuredThresholds(workspaceRoot: string): unknown {
     const config = JSON.parse(readFileSync(path, 'utf8')) as { loopGuard?: { thresholds?: unknown } };
     return config.loopGuard?.thresholds;
   } catch {
+    // Unreadable config means no configured thresholds, so the defaults apply.
+    // Undefined says exactly that; throwing would fail a tool call over a typo.
     return undefined;
   }
 }

@@ -76,6 +76,8 @@ async function runCommandCheck(
   try {
     exitCode = await proc.exited;
   } catch {
+    // The abort signal fired. A timeout is a failed check, not a crashed suite —
+    // a hung command in one case must not stop the others running.
     return { name: check.name, passed: false, evidence: `timed out after ${check.timeoutMs}ms` };
   }
 

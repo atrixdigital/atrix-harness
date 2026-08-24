@@ -49,6 +49,8 @@ function configFor(root: string, fallback: IndexConfig): IndexConfig {
     const parsed = configSchema.safeParse(JSON.parse(readFileSync(path, 'utf8')));
     return parsed.success ? parsed.data.index : fallback;
   } catch {
+    // A malformed per-project config falls back to the workspace default rather
+    // than aborting the whole index for one bad file.
     return fallback;
   }
 }

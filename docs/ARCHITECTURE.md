@@ -356,6 +356,27 @@ WeakMap, we cannot. A corrupt or concurrently-written file resets the chain rath
 the tool call: this is a heuristic nudge, not a logged invariant, and blocking work because a JSON
 parse failed would be an absurd trade.
 
+## Structural rules, enforced
+
+Three invariants held only by discipline until `packages/cli/src/lib/architecture.test.ts`
+existed. Two of them fail **at runtime in someone else's session**, which is the worst place to
+find a layering mistake.
+
+- **Hooks import nothing from `packages/`.** `core/hooks/` is copied wholesale into the Claude
+  plugin, which receives that directory and nothing else. An import from `packages/` resolves at
+  author time, passes typecheck, ships, and throws a module-not-found in a user's session.
+- **`graph-core`, `graph-mcp` and `eval` never depend on the CLI.** The CLI composes them; a
+  dependency back would make the graph unusable standalone and turn any CLI change into a change
+  to the indexer.
+- **Nothing tunnels out of a package with `../../../..`.** Cross-boundary imports go through a
+  named tsconfig path (`@atrix/hooks/*` → `core/hooks/lib/`) so the coupling is explicit and
+  greppable rather than a relative path that breaks silently when a directory moves.
+
+Plus one that turns a rule on ourselves: **every swallowed error explains why.**
+`core/rules/failure-design.md` requires it, and we shipped 24 bare `catch` blocks with 17
+unexplained before the test existed. A rule the harness does not follow is one nobody else will
+either. Each guard was proven by introducing its regression and watching it go red.
+
 ## Decisions worth knowing
 
 **`AGENTS.md` is capped at 60 lines** and `atrix doctor` fails past it. A manual nobody reads does

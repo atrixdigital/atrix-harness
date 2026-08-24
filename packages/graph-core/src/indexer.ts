@@ -301,6 +301,9 @@ export function indexRepo(db: Database, options: IndexOptions): IndexResult {
       try {
         mtime = Math.floor(statSync(source.fileName).mtimeMs);
       } catch {
+        // Usually a file deleted between discovery and stat. Recorded rather than
+        // swallowed: `runIndex` reports the count, so a partial index never reads as
+        // a complete one.
         skipped.push(source.fileName);
         continue;
       }

@@ -35,6 +35,7 @@ export function listProjects(workspaceRoot: string): Project[] {
       try {
         return statSync(project.root).isDirectory();
       } catch {
+        // A dangling symlink or a directory removed mid-scan is not a project.
         return false;
       }
     })

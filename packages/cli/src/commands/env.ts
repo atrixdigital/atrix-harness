@@ -35,6 +35,8 @@ function readExclude(root: string): string[] {
     const config = JSON.parse(readFileSync(path, 'utf8')) as { index?: { exclude?: string[] } };
     return config.index?.exclude ?? ['node_modules', 'dist', '.next'];
   } catch {
+    // A malformed config must not stop the audit — the defaults are correct for
+    // almost every repo, and a skipped audit hides real conflicts.
     return ['node_modules', 'dist', '.next'];
   }
 }

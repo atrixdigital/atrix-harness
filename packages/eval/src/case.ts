@@ -91,6 +91,8 @@ export function loadCases(dir: string): LoadedCases {
   try {
     entries = readdirSync(dir).sort();
   } catch {
+    // An absent directory is a legitimate state for a repo with no evals yet,
+    // reported as an issue rather than an exception so `atrix eval` can say so.
     return { cases, issues: [`no case directory at ${dir}`] };
   }
 
@@ -101,6 +103,8 @@ export function loadCases(dir: string): LoadedCases {
     try {
       raw = Bun.YAML.parse(readFileSync(join(dir, entry), 'utf8'));
     } catch (error) {
+      // Reported per file rather than thrown: one malformed case must not hide the
+      // validity of every other case in the directory.
       issues.push(`${entry} — not valid YAML: ${(error as Error).message}`);
       continue;
     }

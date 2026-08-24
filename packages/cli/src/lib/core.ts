@@ -113,6 +113,7 @@ function walk(dir: string, match: (p: string) => boolean): string[] {
   try {
     entries = readdirSync(dir);
   } catch {
+    // An absent directory means that artefact kind is simply not in use here.
     return out;
   }
   for (const entry of entries) {

@@ -89,6 +89,8 @@ export function status(harnessRoot: string, projectRoot: string): boolean {
           try {
             return db.query<{ n: number }, []>(sql).get()?.n ?? 0;
           } catch {
+            // A table absent because this index predates a schema addition. Zero is
+            // honest for a counter; failing the whole status view is not.
             return 0;
           }
         };
@@ -109,6 +111,8 @@ export function status(harnessRoot: string, projectRoot: string): boolean {
         db.close();
       }
     } catch {
+      // Corrupt or locked database. Surfaced as a row with a fix rather than an
+      // exception — status is what you run when something is already wrong.
       rows.push({ label: 'code graph', value: red('unreadable'), hint: 'delete .atrix/graph.db and reindex' });
     }
   }

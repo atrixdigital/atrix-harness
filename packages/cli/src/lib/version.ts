@@ -26,6 +26,8 @@ function git(harnessRoot: string, args: string[]): string | undefined {
     const out = proc.stdout.toString().trim();
     return out === '' ? undefined : out;
   } catch {
+    // No git, or not a checkout. Version reporting degrades to the package version
+    // rather than failing — `describe` renders that honestly.
     return undefined;
   }
 }

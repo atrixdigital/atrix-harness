@@ -99,6 +99,8 @@ export function sync(harnessRoot: string, projectRoot: string, args: string[]): 
       };
       writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`, 'utf8');
     } catch {
+      // Warned rather than swallowed: the sync itself succeeded, but drift reporting
+      // will now be wrong, and the user needs to know which of the two happened.
       log.warn('.atrix/config.json is malformed — version not stamped');
     }
   }
@@ -121,6 +123,8 @@ export function driftReport(harnessRoot: string, projectRoot: string): string | 
     const config = JSON.parse(readFileSync(configPath, 'utf8')) as { harness?: { commit?: string | null } };
     recorded = config.harness?.commit ?? undefined;
   } catch {
+    // No readable config means no recorded baseline, so drift is unknowable.
+    // Undefined says exactly that; zero would claim the repo is current.
     return undefined;
   }
 

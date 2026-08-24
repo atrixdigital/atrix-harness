@@ -19,6 +19,7 @@
     "baseUrl": ".",
     "paths": {
       "@atrix/graph-core": ["packages/graph-core/src/index.ts"],
+      "@atrix/hooks/*": ["core/hooks/lib/*"],
       "@atrix/graph-core/*": ["packages/graph-core/src/*"]
     }
   },
