@@ -218,6 +218,24 @@ because the word *they* appeared in it.
 Exposed as `atrix recall` and the `atrix_recall` MCP tool, and named in `AGENTS.md` — a knowledge
 base agents do not know to ask is a knowledge base nobody reads.
 
+### `atrix verify` — the only check that is about the thing
+
+Every other gate here checks structure: the file exists, the manifest validates, the tests pass.
+None of them can answer **does the model actually see this**, and for the whole life of the Claude
+adapter the answer was no while all of them were green.
+
+So `verify` launches real sessions and asks for something only present if the delivery path works:
+the bounded-recovery levels, a named skill, a canary file that must survive `rm -rf`. The guard
+check reads the world rather than the transcript — an agent claiming it was blocked proves nothing.
+
+**Every probe is checked against a negative control.** The first version of the skills check asked
+whether *any* database-related skill existed and passed on the developer's own unrelated plugins.
+A probe that cannot fail is not a check — which is precisely the failure this command exists to
+catch, reproduced inside the command itself on its first run.
+
+Offline checks are free and run by default. `--live` spends a handful of small queries and is what
+you run before letting a team adopt a change.
+
 ### How the rules actually reach each agent
 
 Not the same way, and the difference mattered more than expected.

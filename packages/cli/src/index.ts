@@ -8,6 +8,7 @@ import { runEval } from './commands/eval.ts';
 import { runIndex } from './commands/index-repo.ts';
 import { status } from './commands/status.ts';
 import { sync } from './commands/sync.ts';
+import { verify } from './commands/verify.ts';
 import { init } from './commands/init.ts';
 import { learn } from './commands/learn.ts';
 import { lint } from './commands/lint.ts';
@@ -25,6 +26,7 @@ ${bold('Commands')}
   ${cyan('init')}               Scaffold the current repository to use the harness
   ${cyan('status')}             Everything at a glance — content, learning, graphs, coverage
   ${cyan('doctor')}             Check the harness is wired up correctly
+  ${cyan('verify')}             Prove it works against a real agent; --live for full
   ${cyan('lint')}               Check skills against the authoring rules
   ${cyan('recall')} <question>  Ask the knowledge base — incidents, understandings, ADRs
   ${cyan('observe')}            Recurring failures in this project; --all for the workspace
@@ -71,6 +73,9 @@ async function main(argv: string[]): Promise<number> {
 
     case 'status':
       return status(harnessRoot, projectRoot) ? 0 : 1;
+
+    case 'verify':
+      return (await verify(harnessRoot, rest)) ? 0 : 1;
 
     case 'doctor':
       return doctor(harnessRoot, projectRoot) ? 0 : 1;

@@ -74,6 +74,28 @@ Searches scope to whichever project you are in; `allProjects` spans the workspac
 Point the agent at `adapters/codex/AGENTS.md`, `adapters/gemini/GEMINI.md`, or copy
 `adapters/cursor/.cursor/` into place. `adapters/*/mcp.json` carries the graph server.
 
+### Checking it actually works
+
+```bash
+atrix verify          # free — manifests load, components are discovered
+atrix verify --live   # launches real sessions and asks
+```
+
+The live checks are the only ones that answer *does the model actually see this*. Every offline
+check in this repo was green while the rule bundle reached no Claude session at all — the file
+existed, the manifests validated, the tests passed, and none of that was the question.
+
+```
+✓ the marketplace is loadable
+✓ components are discovered — 12 agents, 3 hook events
+✓ the rules reach the model — retry (×2) → patch (×2) → replan, then stop and report
+✓ the safety guard intercepts — canary survived, the guard asked instead of deleting
+✓ our skills are discoverable — YES
+```
+
+Each probe is checked against a negative control, so a pass means the delivery path works rather
+than that the question was unfalsifiable.
+
 ### Staying current
 
 ```bash
