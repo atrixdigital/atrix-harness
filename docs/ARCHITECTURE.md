@@ -98,6 +98,31 @@ record of what the team used to believe explains code written under that belief.
 
 This repo's own [UNDERSTANDINGS.md](../UNDERSTANDINGS.md) is the worked example.
 
+### The environment graph
+
+Built before the rest of the dependency graph because config mismatches are the recurring,
+expensive failure in these repos — a migration tool loading `.env` while the app runs on
+`.env.local`, pointed at two different databases, both reporting success.
+
+Reads are found through the TypeScript AST rather than a regex: a regex over `process.env.X`
+misses `process.env['X']` and destructuring, and matches the string inside a comment. The
+indexer already builds a Program, so this costs nothing extra and is exact.
+
+**Values are never read out.** Definitions are compared by hash, so the tool can say two
+definitions differ without printing a credential into a terminal or a transcript. A config
+auditor that leaks secrets is a worse problem than the one it solves — asserted by a test that
+seeds a fake token and greps the serialised output for it.
+
+Findings are ranked by what can actually hurt: a secret behind a public prefix, then conflicting
+definitions, then reads with no definition, then duplicates and dead config. Two suppression lists
+keep the signal clean, because a tool with false positives gets ignored and takes its true
+positives with it — platform-supplied variables (`CI`, `VERCEL_ENV`) are not "undefined", and keys
+designed to be public (`*_ANON_KEY`, `*_PUBLISHABLE_KEY`) are not leaked secrets.
+
+Run against `PlayO-web` on its first outing it found four conflicting definitions, including
+`DATABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in both `.env` and `.env.local` with different
+values.
+
 ## Rule or skill? The decision that keeps this sustainable
 
 The most common contribution mistake is writing a rule for something that should be a skill.

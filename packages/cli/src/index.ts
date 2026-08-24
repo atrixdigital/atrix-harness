@@ -2,6 +2,7 @@
 import { build } from './commands/build.ts';
 import { distill } from './commands/distill.ts';
 import { doctor } from './commands/doctor.ts';
+import { runEnv } from './commands/env.ts';
 import { runEval } from './commands/eval.ts';
 import { runIndex } from './commands/index-repo.ts';
 import { sync } from './commands/sync.ts';
@@ -26,6 +27,7 @@ ${bold('Commands')}
   ${cyan('learn')} <title>      Capture an incident — the start of the learning loop
   ${cyan('distill')} [id]       Turn an incident into a proposed change; lists pending if no id
   ${cyan('index')}              Build the code graph for this repository
+  ${cyan('env')}                Audit environment variables — reads, definitions, conflicts
   ${cyan('sync')}               Pull the latest harness and rebuild adapters
   ${cyan('eval')}               Which layers are measured; --run to measure them
 
@@ -88,6 +90,9 @@ async function main(argv: string[]): Promise<number> {
     case 'index':
       runIndex(projectRoot);
       return 0;
+
+    case 'env':
+      return runEnv(projectRoot) ? 0 : 1;
     case 'sync':
       return sync(harnessRoot, projectRoot, rest) ? 0 : 1;
     case 'eval':

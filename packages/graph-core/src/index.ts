@@ -1,5 +1,15 @@
 export { checkpoint, open, SCHEMA_VERSION, type EdgeKind, type SymbolKind } from './schema.ts';
-export { indexRepo, type IndexOptions, type IndexResult } from './indexer.ts';
+export { createProgramFor, indexRepo, type IndexOptions, type IndexResult } from './indexer.ts';
+export {
+  analyseEnv,
+  collectEnvDefs,
+  collectEnvReads,
+  envFileOrder,
+  type EnvAnalysis,
+  type EnvDef,
+  type EnvFinding,
+  type EnvRead,
+} from './env.ts';
 export {
   callers,
   callees,

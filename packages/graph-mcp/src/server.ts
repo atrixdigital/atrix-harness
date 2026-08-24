@@ -4,16 +4,28 @@ import { join } from 'node:path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
-import { callees, callers, context, impact, open, search, type SymbolRow } from '@atrix/graph-core';
+import {
+  analyseEnv,
+  callees,
+  callers,
+  collectEnvDefs,
+  collectEnvReads,
+  context,
+  createProgramFor,
+  impact,
+  open,
+  search,
+  type SymbolRow,
+} from '@atrix/graph-core';
 import { renderAmbiguous, renderCallees, renderCallers, renderContext, renderImpact, renderSymbols } from './render.ts';
 
 /**
  * The code graph, over MCP.
  *
- * Deliberately five tools, not twenty-eight. Models reason better over a small,
- * distinct tool surface, and every additional tool costs description tokens in every
- * session whether or not it is used. These five cover the questions that actually
- * precede an edit; anything rarer is better served by grep.
+ * Deliberately six tools, not twenty-eight. Models reason better over a small, distinct
+ * tool surface, and every additional tool costs description tokens in every session
+ * whether or not it is used. These cover the questions that actually precede an edit;
+ * anything rarer is better served by grep.
  */
 
 const projectRoot = process.env.ATRIX_PROJECT_ROOT ?? process.cwd();
@@ -132,6 +144,42 @@ server.tool(
         return result === undefined ? `Symbol ${symbol} vanished from the index — rerun \`atrix index\`.` : renderImpact(result);
       }) as string,
     ),
+);
+
+server.tool(
+  'atrix_env',
+  'Audit environment variables: which are read, where they are defined, and where those disagree. Use BEFORE running a migration or any command that talks to a database, and when diagnosing "it works locally but not in X". Never returns values, only names and locations.',
+  {
+    name: z
+      .string()
+      .optional()
+      .describe('Narrow to one variable, e.g. "DATABASE_URL". Omit for the full audit.'),
+  },
+  ({ name }) => {
+    const program = createProgramFor({ root: projectRoot, include: [], exclude: ['node_modules', 'dist', '.next'] });
+    const { reads, findings } = analyseEnv(collectEnvReads(program, projectRoot), collectEnvDefs(projectRoot), projectRoot);
+
+    if (name !== undefined) {
+      const sites = reads.filter((r) => r.name === name);
+      const hits = findings.filter((f) => f.name === name);
+      const lines = [
+        `${name}: read in ${sites.length} place(s)`,
+        ...sites.slice(0, 10).map((s) => `  ${s.path}:${s.line}`),
+        ...(hits.length === 0
+          ? ['', 'No findings.']
+          : ['', ...hits.map((f) => `${f.kind.toUpperCase()} — ${f.detail}\n  ${f.locations.join('\n  ')}`)]),
+      ];
+      return text(lines.join('\n'));
+    }
+
+    const blocking = findings.filter((f) => f.kind === 'conflicting' || f.kind === 'client-exposed-secret');
+    if (blocking.length === 0) return text('No conflicting or client-exposed variables.');
+
+    return text(
+      `${blocking.length} finding(s) that can point a tool at the wrong system:\n` +
+        blocking.map((f) => `\n${f.kind.toUpperCase()}  ${f.name}\n  ${f.detail}\n  ${f.locations.join(', ')}`).join(''),
+    );
+  },
 );
 
 await server.connect(new StdioServerTransport());

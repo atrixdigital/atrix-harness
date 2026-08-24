@@ -196,6 +196,17 @@ export interface IndexOptions {
 }
 
 /**
+ * Build the Program without indexing.
+ *
+ * Env analysis needs the same parse the indexer does, and building it twice on a large
+ * monorepo is seconds wasted for no reason.
+ */
+export function createProgramFor(options: IndexOptions): ts.Program {
+  const { files, compilerOptions } = discover(options);
+  return ts.createProgram(files, { ...compilerOptions, noEmit: true });
+}
+
+/**
  * Discover the project's files.
  *
  * A single root tsconfig is the easy case. Monorepos — which most Atrix repos are —

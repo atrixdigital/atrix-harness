@@ -76,6 +76,7 @@ atrix sync      # pull the harness, rebuild adapters, and print what it learned
 | `atrix doctor` | Check everything is wired up |
 | `atrix lint` | Check skills against the authoring rules |
 | `atrix index` | Build this repo's code graph |
+| `atrix env` | Audit env vars — reads, definitions, conflicts (never prints values) |
 | `atrix observe` | Mine the local trace for recurring failure patterns |
 | `atrix learn "<what bit you>"` | Capture an incident — the start of the loop |
 | `atrix distill [id]` | Turn an incident into a reviewable change |

@@ -27,9 +27,12 @@ Contract is a separate deploy from migrate. Collapsing them is the most common w
 
 ## Before you write the migration
 
-1. **Confirm which database you are pointed at.** Config precedence bites repeatedly — a migration
-   tool loading `.env` while the app runs on `.env.local` will happily migrate the wrong database
-   and report success. Print the host before running, every time.
+1. **Confirm which database you are pointed at.** Run `atrix env DATABASE_URL` (or the
+   `atrix_env` tool). Config precedence bites repeatedly — a migration tool loading `.env` while
+   the app runs on `.env.local` will happily migrate the wrong database and report success. This
+   is not hypothetical: an audit of one live repo found `DATABASE_URL` **and** the Supabase
+   service-role key defined in both files with different values. Print the host before running,
+   every time.
 2. **Check the current state**: `migrate status` (or equivalent). A drifted history is a stop, not
    a thing to force through.
 3. **Run `atrix_impact`** on the model or type you are changing. The blast radius tells you which
