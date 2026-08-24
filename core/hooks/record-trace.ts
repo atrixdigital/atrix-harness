@@ -20,10 +20,13 @@
 
 import { appendFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { observe, validateThresholds } from './lib/loop-guard.ts';
+import { configuredThresholds, loadState, saveState } from './lib/loop-state.ts';
 
 interface Payload {
+  session_id?: string;
   tool_name?: string;
-  tool_input?: { command?: string };
+  tool_input?: Record<string, unknown> & { command?: string };
   tool_response?: unknown;
 }
 
@@ -137,9 +140,36 @@ async function runAsHook(): Promise<void> {
   const record = toRecord(payload, new Date().toISOString().slice(0, 10));
   if (record === undefined) return;
 
-  const dir = join(process.cwd(), '.atrix');
+  const projectRoot = process.cwd();
+  const dir = join(projectRoot, '.atrix');
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
   appendFileSync(join(dir, 'trace.jsonl'), `${JSON.stringify(record)}\n`, 'utf8');
+
+  // Loop detection rides the same payload rather than spawning a second hook process
+  // per tool call — this runs on every single one, so the process cost is the design
+  // constraint, not code tidiness.
+  const sessionId = payload.session_id;
+  if (sessionId === undefined) return;
+
+  const { text } = failedFrom(payload.tool_response);
+  // The redaction normaliser doubles as the volatile-metadata stripper: two runs of the
+  // same operation differ by path, pid and duration, and those must not read as progress.
+  const resultSignature = signatureOf(text);
+
+  const { state, nudge } = observe(
+    loadState(projectRoot),
+    { sessionId, tool: record.tool, input: payload.tool_input ?? {}, resultSignature, now: Date.now() },
+    validateThresholds(configuredThresholds(projectRoot)),
+  );
+  saveState(projectRoot, state);
+
+  if (nudge !== undefined) {
+    console.log(
+      JSON.stringify({
+        hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext: nudge.message },
+      }),
+    );
+  }
 }
 
 if (import.meta.main) await runAsHook();

@@ -13,6 +13,8 @@ the knowledge that otherwise gets rediscovered and re-argued every six months.
 
 | 2026-08-24 | [0004](incidents/incident-0004-generated-hook-config-had-the.md) | **merged** | `adapters.test.ts` (published-artefact test tier) + `core/methodology/testing-policy.md`. Generated hooks had the wrong shape and would never have fired — 101 tests green throughout. |
 
+| 2026-08-24 | [0005](incidents/incident-0005-loop-guard-verified-with-zsh.md) | **merged** | `hook-output.test.ts` + a note in testing-policy. zsh's `echo` interprets `\n`, so the verification harness corrupted valid JSON and manufactured a 20-minute bug hunt. Prefer an in-process test to a shell demo when output involves escaping. |
+
 ## Pruned
 
 Nothing yet, but pruning is now mechanical rather than aspirational: rules may declare

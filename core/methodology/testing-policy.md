@@ -38,6 +38,17 @@ untested guard is a comment with a runtime cost.
 This is not optional for safety checks, provenance checks and format assertions — the ones nobody
 exercises by accident during normal work.
 
+## The verification harness is code, and it can be the broken thing
+
+"Verify the world, not the self-report" only holds if the instrument is trustworthy. A shell
+pipeline that rewrites its input silently is not.
+
+**Prefer an in-process test over a shell demo whenever the output involves escaping.** zsh's
+builtin `echo` interprets `\n`; bash's does not. Here-doc handling, quoting and expansion differ
+between shells and between interactive and non-interactive invocations — and any of those can
+manufacture a bug that is not there, or hide one that is. The second failure mode is the dangerous
+one. See `learning/incidents/incident-0005`.
+
 ## Mock only the expensive boundary
 
 Mock the model, the network and the clock. Keep everything downstream real. A hand-rolled

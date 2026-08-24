@@ -213,6 +213,45 @@ nothing.
 **which layers has nobody ever measured?** Today that is 21 of 22. Every one of them is a claim
 nobody has tested — which is fine, so long as it is never mistaken for a claim that has been.
 
+## Loop engineering: the only layer we legitimately own
+
+We do not own the agent loop — Claude Code, Codex and Orca do, and becoming a runtime was
+explicitly rejected. But `bounded-recovery` existed only as prose, which made the second-largest
+failure category (tool errors without effective recovery, 24.6%) enforced by nothing. That
+contradicted this repo's own principle that enforcement lives in hooks, not prose.
+
+The hook surface is enough. Three implementations converged on the design independently:
+
+- **Advisory, never a veto** (dsh `repeat-tool-reminder`). The decision stays with the model. A
+  guard that blocks legitimate work gets switched off, which is worse than no guard.
+- **Detect no-progress, not failure** (Hermes). Their guardrails missed a mutating tool that
+  repeatedly *succeeded* while achieving nothing — an agent hit the same non-existent URL 98
+  times, successfully. Counting failures finds none of that.
+- **Key on the result too** (OpenClaw). Identical call *and* identical result means no progress;
+  a changed result means something moved, so the chain resets.
+
+So the signature is `(tool, argsHash, resultHash)`, and `signatureOf` — written for redaction —
+doubles as the volatile-metadata stripper, since two runs of the same operation differ by path,
+pid and duration.
+
+| Count | Hook | Action |
+|---|---|---|
+| 3 | PostToolUse | short nudge via `additionalContext` |
+| 5 | PostToolUse | detailed — names the tool, run length and arguments |
+| ≥8 | PreToolUse | `ask` — the human decides |
+
+Two details that make it work rather than annoy:
+
+- **Bookkeeping tools are transparent** — `TodoWrite` neither advances nor resets a chain, so
+  interleaving it cannot launder a loop.
+- **Escalation only fires on the *same* call.** A different call is the model changing approach,
+  which is exactly what the nudges asked for.
+
+State lives in `.atrix/loop-state.json` because hooks are separate processes — dsh can use a
+WeakMap, we cannot. A corrupt or concurrently-written file resets the chain rather than failing
+the tool call: this is a heuristic nudge, not a logged invariant, and blocking work because a JSON
+parse failed would be an absurd trade.
+
 ## Decisions worth knowing
 
 **`AGENTS.md` is capped at 60 lines** and `atrix doctor` fails past it. A manual nobody reads does

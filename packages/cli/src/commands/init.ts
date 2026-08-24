@@ -87,6 +87,9 @@ export function init(harnessRoot: string, projectRoot: string): void {
         // Recorded so `doctor` can tell you how far behind the shared harness you are.
         harness: { version: version.version, commit: version.commit ?? null, path: harnessRel },
         index: { include: ['src', 'app', 'packages', 'apps'], exclude: ['node_modules', 'dist', '.next'] },
+        // Consecutive identical calls with an identical result. The first two levels
+        // nudge; the last escalates the next repeat to the human.
+        loopGuard: { thresholds: [3, 5, 8] },
         // Off by default: most Atrix repos are private client work and code chunks must
         // never leave the machine without an explicit decision.
         semantic: { provider: null },
