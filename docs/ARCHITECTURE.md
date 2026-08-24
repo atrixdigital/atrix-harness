@@ -106,6 +106,18 @@ The working directory is now the *workspace*, not the project. Everything that a
 | **Incident ids** | `incident-YYYY-MM-DD-slug`, not a sequence. Two developers capturing on the same afternoon both computed "the next free number" and both wrote `incident-0006` — a git conflict in the one directory whose purpose is collecting independent notes. Sequential ids remain valid so existing rules keep resolving. |
 | **UNDERSTANDINGS.md** | Lives in **each project's own repo** and is committed there, so it travels with the code and reaches whoever works on it. The information graph indexes all of them plus the harness's own. |
 
+### `atrix init` has two modes
+
+Run at the workspace root it wires the graph server and index config **once** — one server covers
+every project, so a copy per project would be wrong and would fight the workspace-level one.
+
+Run inside `projects/<name>` it scaffolds the two files that belong to *that repo* and are
+committed to it: `AGENTS.md` for its conventions and `UNDERSTANDINGS.md` for how it works. Both
+travel with the code, so whoever clones that project gets them without needing the harness.
+
+Picking the wrong mode is the destructive case — writing a project's `AGENTS.md` over the org-wide
+manual — so it is asserted by a test rather than left to the resolution logic being right.
+
 ### Shared versus private
 
 | Shared, committed | Private, gitignored |

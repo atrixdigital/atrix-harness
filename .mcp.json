@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "atrix-graph": {
+      "type": "stdio",
+      "command": "bun",
+      "args": [
+        "run",
+        "${ATRIX_HOME}/packages/graph-mcp/src/server.ts"
+      ]
+    }
+  }
+}

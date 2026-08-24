@@ -15,6 +15,18 @@ describe('redaction', () => {
     expect(programOf('sudo rm -rf /var/lib/thing')).toBe('rm');
   });
 
+  test.each([
+    ['cd projects/playo && psql -c "SELECT 1"', 'psql'],
+    ['cd apps/api && bun test', 'bun'],
+    ['DATABASE_URL=x cd foo && npx prisma migrate deploy', 'prisma'],
+    ['cat file | grep pattern', 'cat'],
+    ['cd somewhere', 'cd'],
+  ])('attributes %s to %s, not to navigation', (command, expected) => {
+    // Taking the first word attributes every compound command in a workspace to `cd`,
+    // so every failure clusters under one meaningless label.
+    expect(programOf(command)).toBe(expected);
+  });
+
   test('strips quoted strings, paths, numbers and hex from a signature', () => {
     const sig = signatureOf('Error: connect ECONNREFUSED 127.0.0.1:6382 at /Users/someone/app/src/db.ts:41');
     expect(sig).not.toContain('someone');

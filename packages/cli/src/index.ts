@@ -27,11 +27,11 @@ ${bold('Commands')}
   ${cyan('doctor')}             Check the harness is wired up correctly
   ${cyan('lint')}               Check skills against the authoring rules
   ${cyan('recall')} <question>  Ask the knowledge base — incidents, understandings, ADRs
-  ${cyan('observe')}            Mine the local trace for recurring failure patterns
+  ${cyan('observe')}            Recurring failures in this project; --all for the workspace
   ${cyan('learn')} <title>      Capture an incident — the start of the learning loop
   ${cyan('distill')} [id]       Turn an incident into a proposed change; lists pending if no id
   ${cyan('index')}              Index the active project; --all for the whole workspace
-  ${cyan('env')}                Audit environment variables — reads, definitions, conflicts
+  ${cyan('env')}                Audit env vars for the active project; --all for every project
   ${cyan('sync')}               Pull the latest harness and rebuild adapters
   ${cyan('eval')}               Which layers are measured; --run to measure them
 
@@ -66,7 +66,7 @@ async function main(argv: string[]): Promise<number> {
       return 0;
 
     case 'init':
-      init(harnessRoot, projectRoot);
+      init(harnessRoot);
       return 0;
 
     case 'status':
@@ -91,8 +91,7 @@ async function main(argv: string[]): Promise<number> {
       return runRecall(projectRoot, rest) ? 0 : 1;
 
     case 'observe':
-      observe(projectRoot);
-      return 0;
+      return observe(harnessRoot, rest) ? 0 : 1;
 
     case 'distill':
       distill(harnessRoot, rest[0]);
@@ -101,7 +100,7 @@ async function main(argv: string[]): Promise<number> {
       return runIndex(harnessRoot, rest) ? 0 : 1;
 
     case 'env':
-      return runEnv(projectRoot) ? 0 : 1;
+      return runEnv(harnessRoot, rest) ? 0 : 1;
     case 'sync':
       return sync(harnessRoot, projectRoot, rest) ? 0 : 1;
     case 'eval':

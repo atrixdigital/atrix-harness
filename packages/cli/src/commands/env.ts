@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { analyseEnv, collectEnvDefs, collectEnvReads, createProgramFor, type EnvFinding } from '@atrix/graph-core';
 import { bold, dim, log, red, yellow } from '../lib/log.ts';
+import { activeProject, listProjects } from '../lib/workspace.ts';
 
 /**
  * Audit the environment graph.
@@ -20,46 +21,78 @@ const LABEL: Record<EnvFinding['kind'], string> = {
 
 const BLOCKING: EnvFinding['kind'][] = ['client-exposed-secret', 'conflicting'];
 
-export function runEnv(projectRoot: string): boolean {
-  const configPath = join(projectRoot, '.atrix', 'config.json');
-  const exclude = existsSync(configPath)
-    ? ((JSON.parse(readFileSync(configPath, 'utf8')) as { index?: { exclude?: string[] } }).index?.exclude ?? [])
-    : ['node_modules', 'dist', '.next'];
-
-  const program = createProgramFor({ root: projectRoot, include: [], exclude, project: 'audit' });
-  const { reads, defs, findings } = analyseEnv(
-    collectEnvReads(program, projectRoot),
-    collectEnvDefs(projectRoot),
-    projectRoot,
-  );
-
-  const names = new Set(reads.map((r) => r.name));
-  log.info(`${names.size} variable(s) read across ${new Set(reads.map((r) => r.path)).size} file(s), ${defs.length} definition(s)`);
-  log.blank();
-
-  if (findings.length === 0) {
-    log.ok('no findings');
-    return true;
+/**
+ * Analysed per project, never across the workspace.
+ *
+ * Two projects each defining DATABASE_URL differently is correct — they are different
+ * systems. Only a disagreement *within* one project means a tool is about to talk to the
+ * wrong one, and merging the scopes would turn every workspace into a wall of false alarms.
+ */
+function readExclude(root: string): string[] {
+  const path = join(root, '.atrix', 'config.json');
+  if (!existsSync(path)) return ['node_modules', 'dist', '.next'];
+  try {
+    const config = JSON.parse(readFileSync(path, 'utf8')) as { index?: { exclude?: string[] } };
+    return config.index?.exclude ?? ['node_modules', 'dist', '.next'];
+  } catch {
+    return ['node_modules', 'dist', '.next'];
   }
+}
 
-  let current: EnvFinding['kind'] | undefined;
-  for (const finding of findings) {
-    if (finding.kind !== current) {
-      current = finding.kind;
+export function runEnv(workspaceRoot: string, args: string[]): boolean {
+  const all = args.includes('--all');
+  const named = args[args.indexOf('--project') + 1];
+  const requested = args.includes('--project') && named !== undefined ? named : undefined;
+
+  const active = activeProject(workspaceRoot);
+  const targets =
+    all || (requested === undefined && active === undefined)
+      ? listProjects(workspaceRoot)
+      : listProjects(workspaceRoot).filter((p) => p.name === (requested ?? active?.name));
+
+  // No projects yet, or a session at the workspace root with none cloned in — audit the
+  // workspace itself so the command is never silently useless.
+  const scopes = targets.length > 0 ? targets : [{ name: '', root: workspaceRoot }];
+
+  let blocking = 0;
+  for (const scope of scopes) {
+    const exclude = readExclude(scope.root);
+    const program = createProgramFor({ root: scope.root, include: [], exclude, project: scope.name || 'audit' });
+    const { reads, defs, findings } = analyseEnv(
+      collectEnvReads(program, scope.root),
+      collectEnvDefs(scope.root),
+      scope.root,
+    );
+
+    const names = new Set(reads.map((r) => r.name));
+    const label = scope.name === '' ? 'workspace' : scope.name;
+    log.info(`${bold(label)} — ${names.size} variable(s) read, ${defs.length} definition(s)`);
+
+    if (findings.length === 0) {
+      log.ok('  no findings');
       log.blank();
-      const heading = LABEL[finding.kind];
-      log.info(BLOCKING.includes(finding.kind) ? red(bold(heading)) : yellow(heading));
+      continue;
     }
-    log.info(`  ${bold(finding.name)} — ${finding.detail}`);
-    for (const location of finding.locations) log.detail(location);
+
+    let current: EnvFinding['kind'] | undefined;
+    for (const finding of findings) {
+      if (finding.kind !== current) {
+        current = finding.kind;
+        const heading = LABEL[finding.kind];
+        log.info(`  ${BLOCKING.includes(finding.kind) ? red(bold(heading)) : yellow(heading)}`);
+      }
+      log.info(`    ${bold(finding.name)} — ${finding.detail}`);
+      for (const location of finding.locations) log.detail(`  ${location}`);
+    }
+
+    blocking += findings.filter((f) => BLOCKING.includes(f.kind)).length;
+    log.blank();
   }
 
-  const blocking = findings.filter((f) => BLOCKING.includes(f.kind));
-  log.blank();
-  if (blocking.length > 0) {
-    log.fail(`${blocking.length} finding(s) can silently point a tool at the wrong system, or ship a secret.`);
+  if (blocking > 0) {
+    log.fail(`${blocking} finding(s) can silently point a tool at the wrong system, or ship a secret.`);
     log.detail(dim('Values are never printed — differences are compared by hash.'));
   }
 
-  return blocking.length === 0;
+  return blocking === 0;
 }

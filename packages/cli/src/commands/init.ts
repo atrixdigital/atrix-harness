@@ -1,26 +1,32 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { basename, join, relative, sep } from 'node:path';
+import { join } from 'node:path';
 import { log } from '../lib/log.ts';
 import { harnessVersion } from '../lib/version.ts';
+import { activeProject, type Project } from '../lib/workspace.ts';
 
 /**
- * Scaffold a consuming repository.
+ * Scaffold, in two distinct modes.
  *
- * Only what genuinely must live inside the repo goes here: the pointer to the harness,
- * repo-specific conventions, index config, and the MCP wiring. Everything shared stays in
- * the harness so it can be updated centrally.
+ * **Workspace** (run at the harness root): the MCP wiring and index config, once. The
+ * graph server is workspace-wide — one server covering every project — so this belongs at
+ * the root and not repeated per project.
  *
- * The MCP wiring is not optional. AGENTS.md instructs every agent to reach for
- * `atrix_search` and `atrix_impact` before reading files; shipping that instruction
- * without the tools produces an agent that tries, fails, and falls back — worse than
- * never having promised them.
+ * **Project** (run inside `projects/<name>`): the two files that belong to *that repo* and
+ * are committed to it — `AGENTS.md` for its conventions and `UNDERSTANDINGS.md` for how it
+ * works. Both travel with the code, so whoever clones that project gets them without
+ * needing the harness.
+ *
+ * The MCP wiring is not optional in workspace mode. AGENTS.md instructs every agent to
+ * reach for `atrix_search` before reading files; shipping that instruction without the
+ * tools produces an agent that tries, fails and falls back — worse than never promising
+ * them.
  */
 
 const ATRIX_MCP_KEY = 'atrix-graph';
 
 /** Merge our server into whatever the repo already has, without touching the rest. */
-function wireMcp(projectRoot: string, created: string[], skipped: string[]): void {
-  const file = join(projectRoot, '.mcp.json');
+function wireMcp(workspaceRoot: string, created: string[], skipped: string[]): void {
+  const file = join(workspaceRoot, '.mcp.json');
   const server = {
     type: 'stdio',
     command: 'bun',
@@ -54,17 +60,17 @@ function wireMcp(projectRoot: string, created: string[], skipped: string[]): voi
   created.push('.mcp.json (merged in atrix-graph)');
 }
 
-export function init(harnessRoot: string, projectRoot: string): void {
-  if (harnessRoot === projectRoot) {
-    log.warn('This is the harness itself — nothing to initialise.');
-    return;
-  }
+export function init(workspaceRoot: string, cwd: string = process.cwd()): void {
+  const project = activeProject(workspaceRoot, cwd);
+  return project === undefined ? initWorkspace(workspaceRoot) : initProject(project);
+}
 
+function initProject(project: Project): void {
   const created: string[] = [];
   const skipped: string[] = [];
 
   const put = (rel: string, contents: string): void => {
-    const file = join(projectRoot, rel);
+    const file = join(project.root, rel);
     if (existsSync(file)) {
       skipped.push(rel);
       return;
@@ -74,41 +80,13 @@ export function init(harnessRoot: string, projectRoot: string): void {
     created.push(rel);
   };
 
-  // A relative path is friendlier when the harness sits nearby, but degenerates into
-  // `../../../../..` noise once the project lives elsewhere. Fall back to absolute.
-  const rel = relative(projectRoot, harnessRoot);
-  const harnessRel = rel === '' || rel.split(sep).filter((s) => s === '..').length > 2 ? harnessRoot : rel;
-  const version = harnessVersion(harnessRoot);
-
-  put(
-    '.atrix/config.json',
-    `${JSON.stringify(
-      {
-        // Recorded so `doctor` can tell you how far behind the shared harness you are.
-        harness: { version: version.version, commit: version.commit ?? null, path: harnessRel },
-        index: { include: ['src', 'app', 'packages', 'apps'], exclude: ['node_modules', 'dist', '.next'] },
-        // Consecutive identical calls with an identical result. The first two levels
-        // nudge; the last escalates the next repeat to the human.
-        loopGuard: { thresholds: [3, 5, 8] },
-        // Off by default: most Atrix repos are private client work and code chunks must
-        // never leave the machine without an explicit decision.
-        semantic: { provider: null },
-      },
-      null,
-      2,
-    )}\n`,
-  );
-
   put(
     'AGENTS.md',
-    `# ${basename(projectRoot)}
+    `# ${project.name}
 
-## Harness
-
-This repository is operated under the Atrix harness. **Read \`${harnessRel}/AGENTS.md\` first** —
-it carries the rules, methodology, recovery policy and skills that apply everywhere.
-
-Repo-specific context below overrides the harness on conventions, never on safety.
+Operated under the Atrix harness — the org-wide rules, methodology and skills live there and
+apply here. What follows is specific to this repository, and overrides the harness on
+conventions but never on safety.
 
 ## Stack
 
@@ -125,37 +103,29 @@ Repo-specific context below overrides the harness on conventions, never on safet
 
 ## Conventions
 
-<!-- Only what is specific to THIS repo and not already in the harness rules.
-     If you find yourself writing a general rule here, it belongs in the harness:
+<!-- Only what is specific to THIS repo. A general rule belongs in the harness:
      run \`atrix learn\` instead. -->
 
 ## Gotchas
 
-<!-- Things that have bitten people. Each one should have an incident behind it. -->
+<!-- Things that have bitten people here. -->
 
 ## How this system works
 
-See [UNDERSTANDINGS.md](./UNDERSTANDINGS.md) — accumulated comprehension of the mechanisms,
-constraints and history that the code does not state. Read it before tracing a flow from scratch,
-and add to it when you work something out.
+See [UNDERSTANDINGS.md](./UNDERSTANDINGS.md) — the mechanisms, constraints and history the code
+does not state. Read it before tracing a flow from scratch; add to it when you work something out.
 `,
   );
 
-  put('CLAUDE.md', `# Pointer\n\nRead **[AGENTS.md](./AGENTS.md)**, then \`${harnessRel}/AGENTS.md\`.\n`);
-
-  // Descriptive counterpart to AGENTS.md. Agents re-derive the same architecture every
-  // session; this is where comprehension accumulates instead of evaporating.
   put(
     'UNDERSTANDINGS.md',
-    `# Understandings — ${basename(projectRoot)}
+    `# Understandings — ${project.name}
 
 How this codebase actually works, and why. **Descriptive, not prescriptive** — rules live in
 [AGENTS.md](./AGENTS.md); this is what is already true.
 
 Append entries; never rewrite one. When an understanding is overtaken, mark it superseded and add
 a new entry — the record of what the team used to believe explains code written under that belief.
-
-See the \`recording-understanding\` skill for when an entry is worth writing.
 
 ---
 
@@ -174,11 +144,54 @@ that is the expensive part to rediscover.>
 `,
   );
 
-  wireMcp(projectRoot, created, skipped);
+  for (const rel of created) log.ok(`created ${project.name}/${rel}`);
+  for (const rel of skipped) log.detail(`kept existing ${project.name}/${rel}`);
+
+  log.blank();
+  log.info(`These two files belong to ${project.name} and are committed to its own repo —`);
+  log.detail('they travel with the code, so whoever clones it gets them without the harness.');
+  log.blank();
+  log.detail(`Next: atrix index --project ${project.name}`);
+}
+
+function initWorkspace(workspaceRoot: string): void {
+  const created: string[] = [];
+  const skipped: string[] = [];
+
+  const put = (rel: string, contents: string): void => {
+    const file = join(workspaceRoot, rel);
+    if (existsSync(file)) {
+      skipped.push(rel);
+      return;
+    }
+    mkdirSync(join(file, '..'), { recursive: true });
+    writeFileSync(file, contents, 'utf8');
+    created.push(rel);
+  };
+
+  const version = harnessVersion(workspaceRoot);
+
+  put(
+    '.atrix/config.json',
+    `${JSON.stringify(
+      {
+        harness: { version: version.version, commit: version.commit ?? null },
+        index: { include: [], exclude: ['node_modules', 'dist', '.next'] },
+        loopGuard: { thresholds: [3, 5, 8] },
+        // Off by default: most Atrix repos are private client work and code chunks must
+        // never leave the machine without an explicit decision.
+        semantic: { provider: null },
+      },
+      null,
+      2,
+    )}\n`,
+  );
+
+  wireMcp(workspaceRoot, created, skipped);
 
   // The index and the trace are local-only. The trace is redacted by construction, but
   // it should still never reach a remote.
-  const gitignore = join(projectRoot, '.gitignore');
+  const gitignore = join(workspaceRoot, '.gitignore');
   const ignoreLine = '.atrix/';
   const existing = existsSync(gitignore) ? readFileSync(gitignore, 'utf8') : '';
   if (!existing.split(/\r?\n/).some((l) => l.trim() === ignoreLine)) {
@@ -192,7 +205,8 @@ that is the expensive part to rediscover.>
 
   log.blank();
   log.info('Next:');
-  log.detail(`1. export ATRIX_HOME="${harnessRoot}"   (the MCP server resolves it at launch)`);
-  log.detail('2. atrix index                          — build the code graph');
-  log.detail('3. Fill in Stack, Commands and Gotchas in AGENTS.md');
+  log.detail(`1. export ATRIX_HOME="${workspaceRoot}"   (the MCP server resolves it at launch)`);
+  log.detail('2. git clone <repo> projects/<name>     — bring a project in');
+  log.detail('3. cd projects/<name> && atrix init     — scaffold that project');
+  log.detail('4. atrix index --all                    — one index across the workspace');
 }

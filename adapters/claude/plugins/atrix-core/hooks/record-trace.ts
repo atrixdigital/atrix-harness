@@ -43,19 +43,48 @@ export interface TraceRecord {
   signature?: string;
 }
 
-/** The program a shell command runs, ignoring env assignments and common prefixes. */
-export function programOf(command: string): string | undefined {
-  const words = command
+/**
+ * The program a shell command actually runs.
+ *
+ * Naively taking the first word attributes `cd projects/playo && psql -c '…'` to `cd`,
+ * which is both wrong and useless — every compound command in a workspace starts that
+ * way, so every failure would cluster under one meaningless label.
+ *
+ * So: split on shell separators and take the first segment whose leading word is a real
+ * command rather than navigation or a wrapper.
+ */
+const NAVIGATION = new Set(['cd', 'pushd', 'popd', 'source', '.', 'export', 'set']);
+const WRAPPERS = new Set(['sudo', 'time', 'env', 'nohup', 'xargs', 'npx', 'bunx', 'pnpm', 'dlx']);
+
+function leadingWord(segment: string): string | undefined {
+  const words = segment
     .trim()
     .split(/\s+/)
-    .filter((w) => !/^[A-Z_][A-Z0-9_]*=/.test(w));
+    .filter((w) => w !== '' && !/^[A-Z_][A-Z0-9_]*=/.test(w));
 
   for (const word of words) {
-    if (word === 'sudo' || word === 'time' || word === 'npx' || word === 'bunx') continue;
+    if (WRAPPERS.has(word)) continue;
     const program = word.split('/').pop();
     return program === undefined || program === '' ? undefined : program;
   }
   return undefined;
+}
+
+export function programOf(command: string): string | undefined {
+  // Split on && || ; and | — not inside quotes, but a heuristic is fine here: a
+  // misattributed program degrades a label, it does not break anything.
+  const segments = command.split(/\s*(?:&&|\|\||;|\|)\s*/);
+
+  let fallback: string | undefined;
+  for (const segment of segments) {
+    const word = leadingWord(segment);
+    if (word === undefined) continue;
+    fallback ??= word;
+    if (!NAVIGATION.has(word)) return word;
+  }
+
+  // Everything was navigation — `cd somewhere` on its own is a legitimate answer.
+  return fallback;
 }
 
 /**

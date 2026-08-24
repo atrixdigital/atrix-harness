@@ -18,10 +18,9 @@
 import { Database } from 'bun:sqlite';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { clusterFailures, describeCluster, readTrace } from './lib/trace.ts';
 
 const INDEX_STALE_HOURS = 24;
-/** Below this a repeated failure is an incident, not a standing problem. */
-const MIN_RECURRENCE = 3;
 
 function findUp(marker: string, from: string): string | undefined {
   let dir = from;
@@ -42,6 +41,8 @@ function harnessRoot(): string | undefined {
 
 const notes: string[] = [];
 const projectRoot = process.cwd();
+/** The workspace, when we are inside one; otherwise treat cwd as the whole world. */
+const workspace = harnessRoot() ?? projectRoot;
 const atrix = join(projectRoot, '.atrix');
 
 // — Configuration that can silently point a tool at the wrong system. Read from the
@@ -77,36 +78,19 @@ if (existsSync(dbPath)) {
   }
 }
 
-// — A failure the agent is about to repeat. `atrix observe` exists, and nobody remembers
-//   to run it; surfacing the top pattern here is the whole point of recording the trace.
-const tracePath = join(atrix, 'trace.jsonl');
-if (existsSync(tracePath)) {
-  try {
-    const counts = new Map<string, { count: number; days: Set<string> }>();
-    for (const line of readFileSync(tracePath, 'utf8').split('\n')) {
-      if (line.trim() === '') continue;
-      const record = JSON.parse(line) as { ok: boolean; tool: string; program?: string; signature?: string; date: string };
-      if (record.ok || record.signature === undefined) continue;
-      const key = `${record.program ?? record.tool}: ${record.signature}`;
-      const entry = counts.get(key) ?? { count: 0, days: new Set<string>() };
-      entry.count += 1;
-      entry.days.add(record.date);
-      counts.set(key, entry);
-    }
-
-    const worst = [...counts.entries()]
-      .filter(([, v]) => v.count >= MIN_RECURRENCE)
-      .sort(([, a], [, b]) => b.days.size - a.days.size || b.count - a.count)[0];
-
-    if (worst !== undefined) {
-      notes.push(
-        `A failure has recurred here ${worst[1].count} times across ${worst[1].days.size} day(s): ${worst[0].slice(0, 120)}. ` +
-          'If you hit it again, it is a standing problem rather than bad luck — `atrix observe` has the detail.',
-      );
-    }
-  } catch {
-    // A partially-written trace line is normal; never let it block a session.
+// — A failure the agent is about to repeat. `atrix observe` exists and nobody remembers
+//   to run it; surfacing the worst pattern here is the whole point of recording a trace.
+try {
+  const clusters = clusterFailures(readTrace(workspace));
+  const worst = clusters[0];
+  if (worst !== undefined) {
+    notes.push(
+      `A failure has recurred ${worst.count} times across ${worst.days} day(s): ${describeCluster(worst).slice(0, 140)}. ` +
+        'If you hit it again it is a standing problem rather than bad luck — `atrix observe` has the detail.',
+    );
   }
+} catch {
+  // Never let trace bookkeeping delay a session.
 }
 
 // — Index freshness, because impact answers are only as current as the index.
@@ -119,10 +103,9 @@ if (existsSync(dbPath)) {
   notes.push('No code graph in this repo yet — run `atrix index` to enable the graph tools.');
 }
 
-// — Harness state: unfinished learning, and how far this checkout has drifted.
-const root = harnessRoot();
-if (root !== undefined) {
-  const incidents = join(root, 'learning', 'incidents');
+// — Harness state: unfinished learning.
+{
+  const incidents = join(workspace, 'learning', 'incidents');
   if (existsSync(incidents)) {
     const captured = readdirSync(incidents)
       .filter((f) => f.endsWith('.md'))
