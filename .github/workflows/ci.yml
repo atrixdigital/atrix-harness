@@ -32,6 +32,11 @@ jobs:
       - name: Lint skills
         run: bun run atrix lint
 
+      # Case files must parse and must not measure a layer that has been deleted.
+      # Does not run agents — no cost, no key.
+      - name: Eval coverage
+        run: bun run atrix eval
+
       - name: Adapters are up to date
         run: |
           bun run atrix build

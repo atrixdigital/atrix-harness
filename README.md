@@ -63,6 +63,7 @@ atrix init      # writes AGENTS.md, CLAUDE.md, .atrix/config.json
 | `atrix observe` | Mine the local trace for recurring failure patterns |
 | `atrix learn "<what bit you>"` | Capture an incident — the start of the loop |
 | `atrix distill [id]` | Turn an incident into a reviewable change |
+| `atrix eval` | Which layers are measured (free); `--run` to measure them |
 
 `sync` and `eval` land in later phases — see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 

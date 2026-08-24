@@ -2,6 +2,7 @@
 import { build } from './commands/build.ts';
 import { distill } from './commands/distill.ts';
 import { doctor } from './commands/doctor.ts';
+import { runEval } from './commands/eval.ts';
 import { runIndex } from './commands/index-repo.ts';
 import { init } from './commands/init.ts';
 import { learn } from './commands/learn.ts';
@@ -25,7 +26,12 @@ ${bold('Commands')}
   ${cyan('distill')} [id]       Turn an incident into a proposed change; lists pending if no id
   ${cyan('index')}              Build the code graph for this repository
   ${cyan('sync')}               Pull the latest org-wide source graph        ${dim('(phase 6)')}
-  ${cyan('eval')}               Run the harness eval suite                   ${dim('(phase 7)')}
+  ${cyan('eval')}               Which layers are measured; --run to measure them
+
+${bold('Eval')}
+  atrix eval                        coverage report — free, no model
+  atrix eval --run --agent claude   run the suite  ${dim('(spends real tokens)')}
+  atrix eval --run --runs 10        more repetitions for a firmer signal
 
 ${bold('Environment')}
   ATRIX_HOME         Path to the atrix-harness checkout (otherwise found by walking up)
@@ -91,7 +97,7 @@ async function main(argv: string[]): Promise<number> {
     case 'sync':
       return notYet('sync', 'phase 6');
     case 'eval':
-      return notYet('eval', 'phase 7');
+      return (await runEval(harnessRoot, rest)) ? 0 : 1;
 
     default:
       throw new AtrixError(`Unknown command "${command}".`, 'Run `atrix help` to see what is available.');

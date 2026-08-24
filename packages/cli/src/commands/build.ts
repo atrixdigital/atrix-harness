@@ -42,9 +42,16 @@ function write(file: string, contents: string): void {
   writeFileSync(file, contents.endsWith('\n') ? contents : `${contents}\n`, 'utf8');
 }
 
-/** Rules + methodology, concatenated into one document an agent reads on start. */
-function renderRuleBundle(core: CoreSet, agentsMd: string): string {
+/**
+ * Rules + methodology, concatenated into one document an agent reads on start.
+ *
+ * `exclude` drops one named layer, which is how the eval suite builds its control arm:
+ * the ablation removes exactly the rule under test so a measured difference is
+ * attributable to it rather than to the harness in aggregate.
+ */
+export function renderRuleBundle(core: CoreSet, agentsMd: string, exclude?: string): string {
   const sections = [...core.rules, ...core.methodology]
+    .filter((doc) => doc.meta.name !== exclude)
     .sort((a, b) => a.meta.name.localeCompare(b.meta.name))
     .map((doc) => `## ${doc.meta.name}\n\n${doc.body}`);
 

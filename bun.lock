@@ -19,7 +19,15 @@
         "atrix": "./src/index.ts",
       },
       "dependencies": {
+        "@atrix/eval": "workspace:*",
         "@atrix/graph-core": "workspace:*",
+        "zod": "^3.23.8",
+      },
+    },
+    "packages/eval": {
+      "name": "@atrix/eval",
+      "version": "0.1.0",
+      "dependencies": {
         "zod": "^3.23.8",
       },
     },
@@ -45,6 +53,8 @@
   },
   "packages": {
     "@atrix/cli": ["@atrix/cli@workspace:packages/cli"],
+
+    "@atrix/eval": ["@atrix/eval@workspace:packages/eval"],
 
     "@atrix/graph-core": ["@atrix/graph-core@workspace:packages/graph-core"],
 

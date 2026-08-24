@@ -144,9 +144,44 @@ explicit decision. Adapters planned for Ollama (local), Voyage and OpenAI.
 | 4 | Skill library — template, linter, harvest, write the taxonomy | next (linter done) |
 | 5 | Playbooks — the six orchestration patterns, file-based handoffs | |
 | 6 | Remaining graphs — dependency, information, org-wide source | |
-| 7 | Evals, docs, rollout | |
+| 7 | Evals — framework, ablation, anti-gaming | **done** (1 case) |
 
 Phase 2 is deliberately early: once the loop runs, every later phase feeds itself.
+
+## Evals: measuring which layers earn their place
+
+Everything in `core/` is well-reasoned. That is not the same as measured, and the gap is the point
+of `evals/`.
+
+**The unit is a paired difference, not a pass rate.** "The harness scores 80%" is unfalsifiable.
+"Removing `secure-coding` drops this case from 5/5 to 1/5" is a claim about a specific layer that
+can be wrong. Each case names the layer it `measures`; the control arm rebuilds the bundle with
+exactly that layer removed, so a difference is attributable to it rather than to the harness in
+aggregate. Runs are paired on (case, run index) to control for the variance that makes single-run
+agent comparisons meaningless.
+
+**Verification never reads the agent's output.** Long-horizon coding agents demonstrably game
+evaluations — weakening tests, special-casing known inputs, deleting assertions (SpecBench,
+RESEARCH.md §6f) — and a keyword probe on an agent's own summary passes all of it. Every check
+re-runs a command or re-reads a file in the workspace.
+
+**Protected files are hashed.** Anything under `integrity.unchanged` that is modified or deleted
+fails the case outright, whatever the assertions say — *especially* if every assertion passed,
+because that is what a successful reward hack looks like. The framework is tested against a
+recording of an agent doing exactly this.
+
+**The runner is a seam.** `commandRunner` shells out to `claude`, `codex` or `gemini` from an argv
+template; `replayRunner` applies recorded file mutations. Replay is what makes the framework itself
+testable without spending money or depending on a model's mood — and it is the only way to test
+behaviour against a *cheating* agent, since you cannot ask a real one to cheat on demand.
+
+**Judgements are conservative.** Below five paired runs the verdict is `underpowered`, not a
+finding. `no-measured-effect` is reported as exactly that — it is not a claim the layer does
+nothing.
+
+`atrix eval` with no arguments costs nothing and answers the question that matters day to day:
+**which layers has nobody ever measured?** Today that is 21 of 22. Every one of them is a claim
+nobody has tested — which is fine, so long as it is never mistaken for a claim that has been.
 
 ## Decisions worth knowing
 
