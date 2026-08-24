@@ -27,6 +27,12 @@ jobs:
       - name: Test
         run: bun test
 
+      # The index is per-developer and gitignored, so CI has none until it builds one.
+      # Doing it here is not just to satisfy doctor: it exercises the indexer, the env
+      # analysis and the note collection against a real checkout, which no unit test does.
+      - name: Index
+        run: bun run atrix index
+
       # Validates every rule's `source:` provenance, the 60-line AGENTS.md cap,
       # and that core/ compiles for all five agents.
       - name: Doctor
