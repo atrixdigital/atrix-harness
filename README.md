@@ -100,8 +100,14 @@ evals/         measures which harness layers still earn their place
 
 ## Contributing
 
-Add a rule only when you can name the incident behind it — CI enforces the `source:` field.
-Edit `core/`, never `adapters/`. Run `atrix build && bun test && bun run typecheck` before
-opening a PR.
+**Rule or skill?** Rules load in every session forever; skills load only when relevant. If a
+practice applies to every task, it is a rule. If it applies when doing one *kind* of task —
+designing an API, running a migration, writing a form — it is a skill. When in doubt, skill.
+
+Add a rule only when you can name the incident behind it — CI enforces the `source:` field — and
+give it an `expires_when` if you can say what would make it obsolete.
+
+Edit `core/`, never `adapters/`. Run `atrix build && atrix lint && bun test && bun run typecheck`
+before opening a PR.
 
 Why any of this is shaped the way it is: [docs/RESEARCH.md](docs/RESEARCH.md).

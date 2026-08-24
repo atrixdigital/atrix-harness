@@ -68,6 +68,31 @@ Zod schema, so `atrix build` and CI both reject a rule that cannot name what wen
 `core/rules/typescript-strict.md` is the worked example — it exists because of
 `learning/incidents/incident-0001-*`, and you can read the failure that produced it.
 
+## Rule or skill? The decision that keeps this sustainable
+
+The most common contribution mistake is writing a rule for something that should be a skill.
+
+|  | Rules (`core/rules/`, `core/methodology/`) | Skills (`core/skills/`) |
+|---|---|---|
+| **Loaded** | Every session, always | Only when the description matches the task |
+| **Costs** | Tokens in every session forever | ~100 tokens of metadata until used |
+| **Size** | Keep tight — the bundle is capped | Up to 500 lines, plus unlimited references |
+| **For** | Things true of *every* task | Things true when doing *one kind* of task |
+
+> *"Don't swallow errors"* applies to every line of code anyone writes → **rule**.
+> *"How to design a paginated endpoint"* applies only when designing an endpoint → **skill**.
+
+A concrete demonstration: adding `failure-design` (one rule) cost **+625 tokens in every session
+forever**. Adding `changing-data-safely`, `secure-coding` and `designing-apis` — three skills,
+substantially more content — cost **zero**. They load when relevant and are invisible otherwise.
+
+So the test for a proposed rule is: **would an agent doing a completely unrelated task still need
+to know this?** If not, it is a skill. If it only matters in one repo, it belongs in that repo's
+own `AGENTS.md`, not here.
+
+The budget check in `atrix doctor` exists to force this conversation. When it trips, the answer is
+almost always that a rule should have been a skill.
+
 ## Graphs
 
 | Graph | Status | Approach |
