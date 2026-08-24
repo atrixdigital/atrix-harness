@@ -10,6 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Version reporting and drift detection read git history. The default
+          # shallow clone makes HEAD~n unreachable, so `commitsBehind` correctly
+          # returns "unknown" and any test asserting a distance fails.
+          fetch-depth: 0
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest

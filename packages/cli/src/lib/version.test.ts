@@ -29,7 +29,12 @@ describe('commitsBehind', () => {
   });
 
   test('counts distance from an older commit', () => {
-    const proc = Bun.spawnSync(['git', 'rev-parse', '--short', 'HEAD~2'], { cwd: root, stdout: 'pipe' });
+    // Needs real history. A shallow clone — CI's default before fetch-depth: 0 —
+    // cannot reach HEAD~2, and `commitsBehind` correctly answers "unknown" there.
+    // Self-skipping keeps the suite honest instead of asserting the environment.
+    const proc = Bun.spawnSync(['git', 'rev-parse', '--short', 'HEAD~2'], { cwd: root, stdout: 'pipe', stderr: 'pipe' });
+    if (proc.exitCode !== 0) return;
+
     const older = proc.stdout.toString().trim();
     expect(commitsBehind(root, older)).toBe(2);
   });
