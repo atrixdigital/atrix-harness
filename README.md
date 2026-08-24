@@ -106,7 +106,8 @@ gitignored; nothing leaves your machine.
 ## Layout
 
 ```
-AGENTS.md      the operating manual every agent reads — capped at 60 lines
+AGENTS.md         the operating manual every agent reads — capped at 60 lines
+UNDERSTANDINGS.md how this codebase actually works, and why — descriptive, append-only
 core/          the portable source of truth: rules, methodology, skills, roles, playbooks
 graphs/        code, dependency, information and org-wide source graphs (served over MCP)
 learning/      incidents → candidates → merged rules. The compounding loop.

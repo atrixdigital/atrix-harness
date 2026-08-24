@@ -129,10 +129,47 @@ Repo-specific context below overrides the harness on conventions, never on safet
 ## Gotchas
 
 <!-- Things that have bitten people. Each one should have an incident behind it. -->
+
+## How this system works
+
+See [UNDERSTANDINGS.md](./UNDERSTANDINGS.md) — accumulated comprehension of the mechanisms,
+constraints and history that the code does not state. Read it before tracing a flow from scratch,
+and add to it when you work something out.
 `,
   );
 
   put('CLAUDE.md', `# Pointer\n\nRead **[AGENTS.md](./AGENTS.md)**, then \`${harnessRel}/AGENTS.md\`.\n`);
+
+  // Descriptive counterpart to AGENTS.md. Agents re-derive the same architecture every
+  // session; this is where comprehension accumulates instead of evaporating.
+  put(
+    'UNDERSTANDINGS.md',
+    `# Understandings — ${basename(projectRoot)}
+
+How this codebase actually works, and why. **Descriptive, not prescriptive** — rules live in
+[AGENTS.md](./AGENTS.md); this is what is already true.
+
+Append entries; never rewrite one. When an understanding is overtaken, mark it superseded and add
+a new entry — the record of what the team used to believe explains code written under that belief.
+
+See the \`recording-understanding\` skill for when an entry is worth writing.
+
+---
+
+<!-- Template — copy for each entry:
+
+## <the thing understood, as a claim>
+
+**Date:** YYYY-MM-DD
+**Confidence:** confirmed | inferred | uncertain
+**From:** <file:line, or the command you ran>
+
+<The mechanism. Then why it is that way, if you know. Then anything you ruled out —
+that is the expensive part to rediscover.>
+
+-->
+`,
+  );
 
   wireMcp(projectRoot, created, skipped);
 

@@ -73,6 +73,31 @@ Zod schema, so `atrix build` and CI both reject a rule that cannot name what wen
 `core/rules/typescript-strict.md` is the worked example — it exists because of
 `learning/incidents/incident-0001-*`, and you can read the failure that produced it.
 
+## Four artefacts, four questions
+
+Contributions land in the wrong place when these blur together.
+
+| Artefact | Answers | Scope | Direction |
+|---|---|---|---|
+| `AGENTS.md` | What should I do? | per repo | prescriptive |
+| `UNDERSTANDINGS.md` | How does this actually work, and why? | per repo | **descriptive** |
+| `learning/incidents/` | What went wrong, for everyone? | org-wide | prescriptive |
+| `handoffs/` | Where is this work right now? | one task | temporary |
+
+`UNDERSTANDINGS.md` is the one that did not exist before and is easiest to under-rate. The code
+graph tells you what calls what; it cannot tell you *why the retry lives in the consumer instead
+of the producer*, or that a second cron exists because the first silently stopped firing. Without
+somewhere to put that, every session re-derives it.
+
+Entries are append-only and carry three fields that do the work: **confidence**
+(`confirmed` means something was executed or the definitive code was read — an entry marked
+`uncertain` gets checked, a wrong entry marked `confirmed` gets trusted), **from** (specific
+enough to re-verify; an understanding you cannot re-check is a rumour), and **date** (they go
+stale, and an undated one cannot be judged). Superseded entries are marked, never deleted — the
+record of what the team used to believe explains code written under that belief.
+
+This repo's own [UNDERSTANDINGS.md](../UNDERSTANDINGS.md) is the worked example.
+
 ## Rule or skill? The decision that keeps this sustainable
 
 The most common contribution mistake is writing a rule for something that should be a skill.

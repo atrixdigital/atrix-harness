@@ -19,6 +19,30 @@ describe('frontmatter', () => {
     expect(body).toBe('# just markdown\n');
   });
 
+  test('reads a folded block scalar as one joined line', () => {
+    // Long skill descriptions need these. Before support existed, `description: >`
+    // parsed as the literal string ">" — a plausible wrong value, which is the worst
+    // kind for a parser to produce.
+    const { data } = parseFrontmatter(
+      `---\nname: a-skill\ndescription: >\n  first line of the description\n  second line of it\ngroup: engineering\n---\n\nbody\n`,
+    );
+    expect(data['description']).toBe('first line of the description second line of it');
+    expect(data['group']).toBe('engineering');
+  });
+
+  test('reads a literal block scalar preserving newlines', () => {
+    const { data } = parseFrontmatter(`---\nnotes: |\n  line one\n  line two\n---\n\nbody\n`);
+    expect(data['notes']).toBe('line one\nline two');
+  });
+
+  test('a block scalar does not swallow the keys after it', () => {
+    const { data } = parseFrontmatter(
+      `---\ndescription: >\n  folded text\nsource: founding\napplies: [**]\n---\n\nbody\n`,
+    );
+    expect(data['source']).toBe('founding');
+    expect(data['applies']).toEqual(['**']);
+  });
+
   test('round-trips through stringify', () => {
     const original = { name: 'x-y', applies: ['**'] };
     const { data } = parseFrontmatter(stringifyFrontmatter(original, 'body'));
