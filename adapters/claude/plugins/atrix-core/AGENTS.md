@@ -177,6 +177,37 @@ Do not add comments to satisfy a quota. Most good code has few.
 
 Do the task asked. A related bug you notice is a note in your report, not a detour — unless it
 blocks the task, in which case say so and fix the minimum.
+## confirm-domain-before-modeling
+
+`system-design.md`'s "data first" and this manual's "never guess at architecture" both assume
+there is something to read — existing code, a graph, prior art. **A brand-new domain has none of
+that.** The only source of truth is the user's own head, and a short product description ("esports
++ hospitality") is not enough to derive a correct entity model from — no matter how internally
+consistent the invented one turns out to be.
+
+## The rule
+
+Before writing a schema-first spec (`SPEC.md`, an ADR, a migration) for a domain with **no existing
+codebase to derive entities from**, enumerate the proposed entities, actors, and roles back to the
+user and get explicit confirmation — before any implementation is dispatched, not after.
+
+One generic scoping question early in the conversation ("what is this product?") does not satisfy
+this. The specific nouns you are about to commit to code — the roles, the aggregates, the thing
+being booked/created/owned — must be named back to the user for confirmation.
+
+## Why this is a rule and not a suggestion
+
+Plausibility is not evidence of correctness for domain modeling. An invented model can be
+internally consistent, pass every review checklist, and still be entirely wrong — because the
+failure is not in the code, it is in a fact about the business that only the domain owner holds.
+This class of mistake is expensive precisely because it is invisible until someone who knows the
+real domain looks at the output: by then, implementation (schema, services, UI) has already been
+built and verified against the wrong nouns.
+
+## How we would know it stopped mattering
+
+If greenfield planning work consistently surfaces its entity list for confirmation before
+implementation — without being told to — this rule is dead scaffolding and can be pruned.
 ## context-discipline
 
 Context is the scarcest resource in the loop. Spend it on reasoning, not on rediscovery.

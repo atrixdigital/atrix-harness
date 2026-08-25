@@ -15,6 +15,12 @@ something the repo does three times already.
 
 Read the repo's `AGENTS.md` for stack, commands and gotchas.
 
+**Greenfield domain, no existing code to read entities from:** the graph and the repo have nothing
+to tell you. Do not invent the entity/actor model from a short description, however internally
+consistent the result looks — enumerate the proposed entities, actors and roles and get the user to
+confirm them before writing a schema-first spec (`SPEC.md`, an ADR, a migration) or dispatching any
+implementation. See `confirm-domain-before-modeling`.
+
 ## The bar for a finished plan
 
 You can name **the files that change and how**. If you cannot, you are not done exploring — go
