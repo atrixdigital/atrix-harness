@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Atrix Harness — Developer Guide</title>
+<style>
+  @page { size: A4; margin: 20mm 18mm 18mm 18mm;
+    @bottom-center { content: counter(page) " / " counter(pages); font-family: -apple-system, sans-serif; font-size: 8pt; color: #94a3b8; } }
+  @page :first { @bottom-center { content: ""; } }
+
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; font-size: 10pt; line-height: 1.55;
+         color: #1e293b; margin: 0; }
+
+  .cover { height: 247mm; display: flex; flex-direction: column; justify-content: center; page-break-after: always; }
+  .cover .eyebrow { font-size: 9pt; letter-spacing: .18em; text-transform: uppercase; color: #64748b; margin-bottom: 14mm; }
+  .cover h1 { font-size: 34pt; line-height: 1.1; margin: 0 0 6mm; color: #0f172a; letter-spacing: -.02em; }
+  .cover .sub { font-size: 13pt; color: #475569; max-width: 130mm; line-height: 1.5; margin-bottom: 18mm; }
+  .cover .meta { font-size: 9pt; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 5mm; }
+  .cover .meta strong { color: #334155; font-weight: 600; }
+
+  h1 { font-size: 19pt; color: #0f172a; margin: 0 0 4mm; letter-spacing: -.01em;
+       border-bottom: 2px solid #0f172a; padding-bottom: 2mm; page-break-after: avoid; }
+  h2 { font-size: 13pt; color: #0f172a; margin: 8mm 0 3mm; page-break-after: avoid; }
+  h3 { font-size: 10.5pt; color: #334155; margin: 6mm 0 2mm; page-break-after: avoid; }
+  p  { margin: 0 0 3mm; }
+  .section { page-break-before: always; }
+  .section > h1:first-child { margin-top: 0; }
+
+  /* Ligatures OFF in code: the font renders `--` as an em-dash, so a copied
+     command becomes `atrix verify —live` and simply does not work. */
+  code, pre { font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; }
+  code { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 8.8pt;
+         background: #f1f5f9; padding: 1px 4px; border-radius: 3px; color: #0f172a; }
+  pre { background: #0f172a; color: #e2e8f0; padding: 4mm 5mm; border-radius: 5px; overflow-x: hidden;
+        font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 8.4pt; line-height: 1.5;
+        margin: 3mm 0 4mm; white-space: pre-wrap; word-wrap: break-word; page-break-inside: avoid; }
+  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+  pre .c { color: #94a3b8; }
+  pre .g { color: #4ade80; font-weight: 600; }
+
+  table { width: 100%; border-collapse: collapse; margin: 3mm 0 5mm; font-size: 9pt; page-break-inside: avoid; }
+  th { text-align: left; background: #f8fafc; color: #334155; font-weight: 600;
+       padding: 2.2mm 3mm; border-bottom: 1.5px solid #cbd5e1; }
+  td { padding: 2.2mm 3mm; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+
+  ul, ol { margin: 0 0 3mm; padding-left: 6mm; }
+  li { margin-bottom: 1.5mm; }
+
+  .note { background: #f8fafc; border-left: 3px solid #64748b; padding: 3mm 4mm; margin: 4mm 0;
+          font-size: 9.2pt; page-break-inside: avoid; }
+  .warn { background: #fffbeb; border-left: 3px solid #f59e0b; padding: 3mm 4mm; margin: 4mm 0;
+          font-size: 9.2pt; page-break-inside: avoid; }
+  .note strong, .warn strong { color: #0f172a; }
+
+  .toc { margin-top: 6mm; }
+  .toc div { padding: 2mm 0; border-bottom: 1px solid #f1f5f9; font-size: 10pt; }
+  .toc span { color: #94a3b8; display: inline-block; width: 8mm; }
+
+  .lead { font-size: 11pt; color: #475569; margin-bottom: 5mm; }
+  .kicker { font-size: 8.5pt; letter-spacing: .12em; text-transform: uppercase; color: #64748b; margin-bottom: 1mm; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="eyebrow">Atrix Digital · Engineering</div>
+  <h1>The Atrix Harness</h1>
+  <div class="sub">A complete guide for developers — what it is, how to set it up, and how to work with it day to day.</div>
+  <div class="meta">
+    <strong>Repository</strong> &nbsp; github.com/atrixdigital/atrix-harness<br>
+    <strong>Audience</strong> &nbsp; Every engineer at Atrix<br>
+    <strong>Time to set up</strong> &nbsp; About ten minutes
+  </div>
+</div>
+
+<h1>What this is</h1>
+<p class="lead">One repository that every Atrix engineer starts their AI agent from — carrying our rules, our conventions, our skills, and tools that let an agent understand a codebase without reading it file by file.</p>
+
+<p>It works with whichever agent you use. Claude Code, Codex, Cursor and Gemini all read the same content, packaged differently for each. Launch through Orca and it still applies.</p>
+
+<h2>Why it exists</h2>
+<p>The scaffolding around a model matters at least as much as the model. Published measurements put the spread at <strong>23.8 percentage points on identical tasks</strong> from the harness alone, and the gains hold across every model tested. Separately, a pre-indexed code graph cuts roughly 59% of tokens and 70% of tool calls, because an agent stops rediscovering structure it could have looked up.</p>
+
+<p>The second reason matters more over time. <strong>It compounds.</strong> When something costs you an hour, that hour is captured, reviewed, and turned into a rule everyone gets — instead of the next person losing the same hour.</p>
+
+<h2>What it is not</h2>
+<p>It is not a replacement for your agent, and it does not run the loop. Claude Code, Codex and Orca own that. The harness is the layer above: what the agent knows, what tools it has, and what stops it doing something stupid.</p>
+
+<div class="toc">
+  <div><span>1</span> Setting up</div>
+  <div><span>2</span> Bringing a project in</div>
+  <div><span>3</span> What happens without you doing anything</div>
+  <div><span>4</span> The tools you get</div>
+  <div><span>5</span> When something costs you time</div>
+  <div><span>6</span> Working with several people</div>
+  <div><span>7</span> Command reference</div>
+  <div><span>8</span> When something looks wrong</div>
+</div>
+
+<div class="section">
+<h1>1 · Setting up</h1>
+<p class="lead">Ten minutes, once.</p>
+
+<h2>Clone the harness</h2>
+<p>This becomes your workspace. You launch your agent here, and every project lives inside it.</p>
+
+<pre><code>git clone https://github.com/atrixdigital/atrix-harness.git
+cd atrix-harness
+bun install
+bun run atrix build</code></pre>
+
+<h2>Put it on your PATH</h2>
+<pre><code><span class="c"># add to ~/.zshrc</span>
+export ATRIX_HOME="$HOME/path/to/atrix-harness"
+alias atrix="bun run $ATRIX_HOME/packages/cli/src/index.ts"</code></pre>
+
+<div class="warn"><strong>ATRIX_HOME is not optional.</strong> The graph server resolves it when your agent launches. Without it the tools fail with a path that looks malformed rather than a clear error.</div>
+
+<h2>Wire it into the workspace</h2>
+<pre><code>atrix init</code></pre>
+<p>Writes the graph server config and index settings, once. It merges into an existing <code>.mcp.json</code> rather than replacing it, and refuses to touch one it cannot parse.</p>
+
+<h2>Install the plugin</h2>
+<p><strong>Claude Code</strong> — from the workspace root:</p>
+<pre><code>/plugin marketplace add ./adapters/claude
+/plugin install atrix-core@atrix-harness
+/plugin install atrix-skills@atrix-harness
+/plugin install atrix-graphs@atrix-harness</code></pre>
+
+<p><strong>Codex or Gemini</strong> — point the agent at <code>adapters/codex/AGENTS.md</code> or <code>adapters/gemini/GEMINI.md</code>. <strong>Cursor</strong> — copy <code>adapters/cursor/.cursor/</code> into place. The graph server config is at <code>adapters/*/mcp.json</code>.</p>
+
+<h2>Check it actually works</h2>
+<pre><code>atrix verify --live</code></pre>
+<pre><code><span class="g">✓</span> the marketplace is loadable
+<span class="g">✓</span> components are discovered — 12 agents, 3 hook events
+<span class="g">✓</span> the rules reach the model — retry (×2) → patch (×2) → replan, then stop
+<span class="g">✓</span> the safety guard intercepts — canary survived, the guard asked
+<span class="g">✓</span> our skills are discoverable — YES</code></pre>
+
+<div class="note">These launch real sessions and ask questions only answerable if each path works. They exist because every offline check we had was green at a time when the rules reached no Claude session at all. Structure passing is not the same as the model seeing it.</div>
+</div>
+
+<div class="section">
+<h1>2 · Bringing a project in</h1>
+<p class="lead">Clone it, then ask your agent. That is the whole procedure.</p>
+
+<pre><code>git clone git@github.com:atrixdigital/playo-web.git projects/playo-web</code></pre>
+
+<p>Then, in your agent:</p>
+<div class="note"><em>"I've cloned playo-web into projects — set it up."</em></div>
+
+<p>The agent scaffolds it, reads the repository to work out its stack and its <strong>real</strong> command names, indexes it, audits its configuration, and records anything it worked out along the way. It usually offers before you ask — an un-onboarded project is flagged at session start.</p>
+
+<h2>Why not just run a command</h2>
+<p><code>atrix init</code> writes the template. The valuable half needs someone to read the repo: <code>type-check</code> and <code>typecheck</code> are both common and only one exists in any given repo. A manual with the wrong command is worse than one with a blank, because somebody will run it.</p>
+
+<h2>What the project gets</h2>
+<table>
+  <tr><th>File</th><th>Holds</th><th>Lives in</th></tr>
+  <tr><td><code>AGENTS.md</code></td><td>Stack, commands, conventions, gotchas</td><td>the project's own repo</td></tr>
+  <tr><td><code>UNDERSTANDINGS.md</code></td><td>How the system actually works, and why</td><td>the project's own repo</td></tr>
+</table>
+
+<p>Both are committed to <em>that</em> repository, so they travel with the code and reach whoever clones it — with or without the harness.</p>
+
+<div class="warn"><strong>Projects are independent repos and are gitignored here.</strong> They keep their own remotes and history. Client code never merges into the shared harness.</div>
+
+<h2>The layout</h2>
+<pre><code>atrix-harness/          <span class="c">← launch your agent here</span>
+├── AGENTS.md           <span class="c">the manual every agent reads</span>
+├── core/               <span class="c">rules, skills, roles      shared</span>
+├── learning/           <span class="c">incidents                 shared</span>
+├── .atrix/             <span class="c">index, traces             yours, gitignored</span>
+└── projects/           <span class="c">gitignored</span>
+    ├── playo-web/      <span class="c">its own git remote</span>
+    └── ezrov/          <span class="c">its own git remote</span></code></pre>
+</div>
+
+<div class="section">
+<h1>3 · What happens without you doing anything</h1>
+
+<h2>At session start</h2>
+<p>A hook speaks only when something changes what you would do. Most sessions it says nothing. When it does:</p>
+<pre><code>Atrix harness — things worth knowing before you start:
+- DATABASE_URL, SUPABASE_SERVICE_ROLE_KEY are defined in more than one env
+  file with different values. Whichever file the running tool loads decides
+  which system it talks to — confirm the target before any command that writes.</code></pre>
+
+<p>That is a real finding from a live repo. It fires <em>before</em> you run a migration, not after.</p>
+
+<h2>The rules</h2>
+<p>Eighteen rules load in every session — how code should fail, what needs confirmation, how to report honestly, git discipline, TypeScript conventions. Skills load only when relevant, so fourteen skills cost almost nothing until one applies.</p>
+
+<h2>Two hooks on every tool call</h2>
+<table>
+  <tr><th>Guard</th><th>What it does</th></tr>
+  <tr><td>Safety</td><td>Escalates destructive and outward-facing commands to you — <code>rm -rf</code>, force pushes, <code>DROP</code>, migrations, deploys, anything naming <em>prod</em></td></tr>
+  <tr><td>Loop</td><td>Detects an agent repeating itself with no progress, and escalates before it burns your afternoon</td></tr>
+</table>
+
+<pre><code>call 3 → "You have made the same call 3 times with the same result…"
+call 8 → "Bounded recovery says stop here… the next identical call goes to you."
+call 9 → asks you</code></pre>
+
+<div class="note">Both <strong>ask</strong>; neither blocks silently. A guard that stops legitimate work gets switched off, and then it catches nothing.</div>
+</div>
+
+<div class="section">
+<h1>4 · The tools you get</h1>
+<p class="lead">Seven tools your agent can call, so it stops reading twenty files to answer one question.</p>
+
+<table>
+  <tr><th>Tool</th><th>Answers</th></tr>
+  <tr><td><code>atrix_search</code></td><td>Where is this symbol? Scoped to your project; can span every repo</td></tr>
+  <tr><td><code>atrix_context</code></td><td>Everything about one symbol in a single call</td></tr>
+  <tr><td><code>atrix_callers</code></td><td>What references this — before you change anything shared</td></tr>
+  <tr><td><code>atrix_callees</code></td><td>What this depends on</td></tr>
+  <tr><td><code>atrix_impact</code></td><td>Blast radius of a change, by distance</td></tr>
+  <tr><td><code>atrix_env</code></td><td>Which variables are read, where defined, where they disagree</td></tr>
+  <tr><td><code>atrix_recall</code></td><td>Why is it like this? What broke last time?</td></tr>
+</table>
+
+<h2>Cross-project search</h2>
+<p>Searches default to the project you are in. Ask for the whole workspace and the question becomes <em>has anyone already solved this</em>:</p>
+<pre><code>atrix_search createBooking --all-projects
+→ playo-web/src/booking.ts:42
+  ezrov/apps/api/src/booking.ts:88   <span class="c">← the pattern already exists</span></code></pre>
+
+<h2>Asking why</h2>
+<pre><code>atrix recall "why do we commit generated adapters"</code></pre>
+<p>Searches recorded incidents, architecture understandings and handoffs — the reasoning the code does not state. The code graph tells you what calls what; this tells you why the retry lives in the consumer rather than the producer.</p>
+
+<h2>Checking config before it bites</h2>
+<pre><code>atrix env</code></pre>
+<p>Reports variables read but never defined, and — the dangerous one — the same variable defined in two files with different values. <strong>Values are never printed.</strong> Definitions are compared by hash, so it says two differ without putting a credential in your terminal.</p>
+
+<div class="warn"><strong>Run this before any migration.</strong> The recurring failure across our repos is a tool loading <code>.env</code> while the app runs on <code>.env.local</code>, pointed at two different databases, both reporting success.</div>
+
+<h2>Keeping the index current</h2>
+<pre><code>atrix index                <span class="c"># the project you are in</span>
+atrix index --all          <span class="c"># the whole workspace</span></code></pre>
+<p>Roughly a second for a small project, ten for a thousand files. The index is yours and gitignored; nothing leaves your machine.</p>
+</div>
+
+<div class="section">
+<h1>5 · When something costs you time</h1>
+<p class="lead">This is the part that makes the system get better instead of going stale.</p>
+
+<pre><code>/learn                              <span class="c"># capture what bit you</span>
+atrix distill &lt;incident&gt;            <span class="c"># turn it into a proposed change</span>
+<span class="c"># open a PR — a human reviews it</span>
+atrix sync                          <span class="c"># everyone else gets it</span></code></pre>
+
+<p><code>atrix sync</code> prints what the harness learned since your last pull, because an update nobody reads is an update nobody applies.</p>
+
+<h2>The most likely outcome is not a rule</h2>
+<p>Before proposing one, the question is always: <strong>could a machine catch this instead?</strong> A CI check, a hook, a type, a test. If it can, that beats a rule — it costs nothing at runtime and cannot be forgotten.</p>
+
+<p>Three of our first five incidents resolved to a check rather than a rule. That is the loop working. A rule library grows by refusing things.</p>
+
+<h2>You do not have to remember</h2>
+<p>A hook records a redacted shape of every tool result. <code>atrix observe</code> surfaces failures that keep recurring, and the session-start hook flags the worst one. The person who has hit the same failure eleven times stopped noticing at the fourth.</p>
+
+<div class="note"><strong>Your traces are private.</strong> They record the tool name, the program a shell call invoked — <code>psql</code>, never the query — and an error signature with paths, hostnames, numbers and quoted strings stripped. Gitignored regardless. Only reviewed incidents are shared.</div>
+
+<h2>Recording what you worked out</h2>
+<p>Different from an incident. An incident is what went wrong; an understanding is how something works. When you spend real time tracing a mechanism, put it in that project's <code>UNDERSTANDINGS.md</code> with a date, a confidence level, and where it came from.</p>
+
+<p>Dead ends count. A confirmed dead end is worth as much as a discovery, and it is lost completely if unwritten.</p>
+</div>
+
+<div class="section">
+<h1>6 · Working with several people</h1>
+
+<table>
+  <tr><th>Shared &amp; committed</th><th>Yours &amp; gitignored</th></tr>
+  <tr><td><code>core/</code> — rules, skills, roles</td><td><code>.atrix/graph.db</code> — you build your own</td></tr>
+  <tr><td><code>learning/</code> — incidents merge via git</td><td><code>.atrix/**/trace.jsonl</code></td></tr>
+  <tr><td>each project's <code>UNDERSTANDINGS.md</code>, in its own repo</td><td>loop-guard state</td></tr>
+</table>
+
+<p>Only distilled knowledge is shared. Your failures stay yours; a reviewed incident reaches everyone.</p>
+
+<h2>Staying current</h2>
+<pre><code>atrix sync</code></pre>
+<p>Fast-forwards the harness, rebuilds the adapters, and prints the new entries. It refuses a dirty checkout — stashing your in-progress work to fetch someone else's is not a trade this tool makes.</p>
+
+<p><code>atrix status</code> tells you when you have fallen behind:</p>
+<pre><code>✗ harness up to date — 3 harness commit(s) behind — run `atrix sync`</code></pre>
+
+<h2>Adding something for everyone</h2>
+<p>Read <code>CONTRIBUTING.md</code>. The short version, and the mistake worth avoiding:</p>
+
+<table>
+  <tr><th>Where</th><th>When</th></tr>
+  <tr><td>The harness</td><td>True of <em>any</em> Atrix repo</td></tr>
+  <tr><td>That repo's <code>AGENTS.md</code></td><td>True of one repo — its stack, its commands</td></tr>
+  <tr><td>That repo's <code>UNDERSTANDINGS.md</code></td><td>Describes how it <em>works</em> rather than what to do</td></tr>
+</table>
+
+<div class="note"><strong>Rule or skill?</strong> Rules load every session forever; skills load when relevant. Measured on this repo: one rule cost <strong>625 tokens in every session</strong>. Three skills of substantially more content cost <strong>zero</strong>. If it does not apply to every task, it is a skill.</div>
+</div>
+
+<div class="section">
+<h1>7 · Command reference</h1>
+
+<table>
+  <tr><th>Command</th><th>What it does</th></tr>
+  <tr><td><code>atrix status</code></td><td>Everything at a glance</td></tr>
+  <tr><td><code>atrix doctor</code></td><td>Is it wired up correctly</td></tr>
+  <tr><td><code>atrix verify --live</code></td><td>Prove it works against a real agent</td></tr>
+  <tr><td><code>atrix init</code></td><td>Set up the workspace, or a project when run inside one</td></tr>
+  <tr><td><code>atrix index [--all]</code></td><td>Build the code graph</td></tr>
+  <tr><td><code>atrix env [--all]</code></td><td>Audit environment variables</td></tr>
+  <tr><td><code>atrix recall "&lt;question&gt;"</code></td><td>Ask why something is the way it is</td></tr>
+  <tr><td><code>atrix observe</code></td><td>Failures that keep recurring</td></tr>
+  <tr><td><code>atrix learn "&lt;what bit you&gt;"</code></td><td>Capture an incident</td></tr>
+  <tr><td><code>atrix distill [id]</code></td><td>Turn one into a reviewable change</td></tr>
+  <tr><td><code>atrix sync</code></td><td>Pull the harness and rebuild</td></tr>
+  <tr><td><code>atrix build</code></td><td>Regenerate adapters after editing <code>core/</code></td></tr>
+  <tr><td><code>atrix lint</code></td><td>Check skills against the authoring rules</td></tr>
+  <tr><td><code>atrix eval</code></td><td>Which layers have been measured</td></tr>
+</table>
+</div>
+
+<div class="section">
+<h1>8 · When something looks wrong</h1>
+
+<table>
+  <tr><th>Symptom</th><th>Cause and fix</th></tr>
+  <tr><td>Graph tools missing or failing</td><td><code>ATRIX_HOME</code> not exported. Set it and restart the agent.</td></tr>
+  <tr><td>Search returns nothing</td><td>Not indexed. <code>atrix index</code>.</td></tr>
+  <tr><td>Results from the wrong project</td><td><code>cd</code> into the project, or set <code>ATRIX_PROJECT</code>.</td></tr>
+  <tr><td>Impact looks stale</td><td>It is as current as the index. <code>atrix status</code> shows its age.</td></tr>
+  <tr><td>Agent does not know a rule</td><td><code>atrix verify --live</code>. If the rules check fails, the delivery path is broken.</td></tr>
+  <tr><td>Guard did not fire</td><td><code>atrix verify --live</code> tests it with a canary file.</td></tr>
+  <tr><td>Something worked yesterday</td><td><code>atrix sync</code>, then <code>atrix doctor</code>.</td></tr>
+</table>
+
+<h2>Start here</h2>
+<pre><code>atrix status     <span class="c"># the whole picture</span>
+atrix doctor     <span class="c"># nine checks, exits non-zero on a real problem</span></code></pre>
+
+<h1 style="margin-top:12mm">Being honest about what is proven</h1>
+
+<p>Three of thirty-one layers have an eval. The rules are researched and reasoned, and most have not been measured against agent behaviour. They are our best current judgement, not established fact — and each carries the incident or research that produced it, so you can judge for yourself.</p>
+
+<p>If a rule gets in your way, that is a finding. Say so. Every rule also declares what would make it obsolete, and pruning is as much a contribution as adding.</p>
+
+<div class="note">
+<div class="kicker">Where to go</div>
+<strong>README.md</strong> — install and commands · <strong>CONTRIBUTING.md</strong> — adding to it, and what not to add<br>
+<strong>docs/ARCHITECTURE.md</strong> — how it fits together · <strong>docs/RESEARCH.md</strong> — why it is shaped this way, with sources<br>
+<strong>#core</strong> — ask. If the guide did not answer it, the guide is wrong and that is worth knowing.
+</div>
+</div>
+
+</body>
+</html>
