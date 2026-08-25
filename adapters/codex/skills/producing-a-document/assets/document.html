@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<!--
+  ATRIX DOCUMENT TEMPLATE
+
+  Start here rather than from a blank file. Everything below is the house style,
+  already correct: the typographic scale, the cover, section rules, tables, callouts.
+  Replace the content; leave the system alone unless you are changing it for every
+  document.
+
+  Render:
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+      --headless --disable-gpu --no-pdf-header-footer --virtual-time-budget=10000 \
+      --print-to-pdf="$PWD/out.pdf" "file://$PWD/document.html"
+
+  --virtual-time-budget is NOT optional. Without it Chrome prints before the webfonts
+  arrive and silently substitutes Helvetica and Charter — a document that looks wrong
+  and gives no error. `pdffonts out.pdf` should say IBMPlex.
+
+  Then verify — see references/mechanics.md. Look at the pages; check pdffonts says
+  the faces embedded rather than substituted.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Document Title</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ─────────────────────────────────────────────────────────────
+   TOKENS — the whole design system. Change here, never inline.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  /* Palette, taken from the existing Atrix audits. Restraint is the point:
+     one accent, used for the eyebrow and nothing else on most pages. */
+  --ink:      #131b25;   /* headings, body */
+  --muted:    #545a61;   /* secondary prose, labels */
+  --faint:    #8b9199;   /* metadata, page numbers */
+  --accent:   #0655b7;   /* the one accent */
+  --rule:     #d8dde3;   /* hairlines */
+  --rule-str: #131b25;   /* the heavy rule under the cover block */
+  --wash:     #f6f8fa;   /* table headers, callout grounds */
+  --warn:     #b45309;
+  --warn-bg:  #fffbeb;
+
+  /* Type scale — major third (1.25) off an 11pt body. A consistent ratio is
+     what makes a layout feel composed rather than assembled. */
+  --t-body:    11pt;
+  --t-small:   9.5pt;
+  --t-micro:   7.6pt;   /* labels, letterspaced */
+  --t-h3:      11.5pt;
+  --t-h2:      14pt;
+  --t-h1:      17.5pt;
+  --t-title:   32pt;
+
+  /* Vertical rhythm. Everything is a multiple of the body leading, so blocks
+     land on a common baseline instead of drifting. */
+  --lead:      1.62;
+  --space:     4.2mm;
+
+  --sans:  "IBM Plex Sans", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --serif: "IBM Plex Serif", Charter, Georgia, "Times New Roman", serif;
+  --mono:  "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+
+/* ── Page ───────────────────────────────────────────────────── */
+@page {
+  size: Letter;
+  /* Generous outer and bottom margins are most of what reads as premium. */
+  margin: 22mm 20mm 24mm 20mm;
+  @bottom-center {
+    content: counter(page);
+    font-family: var(--sans); font-size: var(--t-micro);
+    color: var(--faint); letter-spacing: .08em;
+  }
+}
+@page :first { @bottom-center { content: ""; } }
+
+* { box-sizing: border-box; }
+body {
+  font-family: var(--serif);
+  font-size: var(--t-body);
+  line-height: var(--lead);
+  color: var(--ink);
+  margin: 0;
+  /* Measure: 45–75 characters. Full-width body text is the fastest way to look cheap. */
+  max-width: 168mm;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Cover ──────────────────────────────────────────────────── */
+.eyebrow {
+  font-family: var(--sans); font-size: var(--t-micro); font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 6mm;
+}
+.title {
+  font-family: var(--sans); font-size: var(--t-title); font-weight: 700;
+  line-height: 1.12; letter-spacing: -.015em;
+  color: var(--ink); margin: 0 0 5mm;
+}
+.lead {
+  font-size: 12.5pt; line-height: 1.55; color: var(--muted);
+  margin: 0 0 9mm; max-width: 158mm; text-wrap: pretty;
+}
+
+/* Metadata grid — prepared for, date and the exact version are what make a
+   document citable months later. Not decoration. */
+.meta {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 5mm 6mm; padding: 5mm 0;
+  border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+  margin-bottom: 9mm;
+}
+.meta dt {
+  font-family: var(--sans); font-size: var(--t-micro); font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--faint); margin-bottom: 1.5mm;
+}
+.meta dd { font-family: var(--sans); font-size: var(--t-small); margin: 0; color: var(--ink); }
+.chip {
+  font-family: var(--mono); font-size: 7.6pt;
+  background: var(--wash); padding: .6mm 1.4mm; border-radius: 2px; color: var(--muted);
+}
+
+/* ── Headings ───────────────────────────────────────────────── */
+/* Section label + rule: the pattern the existing audits use. It gives a long
+   document navigable landmarks without a heavy heading on every page. */
+.section-label {
+  font-family: var(--sans); font-size: var(--t-micro); font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--ink);
+  padding-bottom: 2mm; border-bottom: 2px solid var(--rule-str);
+  margin: 12mm 0 5mm; page-break-after: avoid;
+}
+h1, h2, h3 { font-family: var(--sans); color: var(--ink); page-break-after: avoid; }
+h1 { font-size: var(--t-h1); font-weight: 700; letter-spacing: -.01em; margin: 10mm 0 3mm; }
+h2 { font-size: var(--t-h2); font-weight: 600; margin: 8mm 0 2.5mm; }
+h3 { font-size: var(--t-h3); font-weight: 600; color: var(--muted); margin: 6mm 0 2mm; }
+p  { margin: 0 0 var(--space); }
+p + p { margin-top: calc(var(--space) * -.25); }
+
+/* First paragraph after a section label carries the weight of the section. */
+.section-label + p { font-size: 12pt; line-height: 1.58; }
+
+/* ── Findings: the house pattern ────────────────────────────── */
+/* Bold lead-in states the fact; the prose that follows gives the consequence
+   and why it matters. A bare bullet carries the same information and moves nobody. */
+ol.findings { counter-reset: f; list-style: none; padding: 0; margin: 0; }
+ol.findings > li {
+  counter-increment: f; position: relative;
+  padding-left: 9mm; margin-bottom: 5mm; page-break-inside: avoid;
+}
+ol.findings > li::before {
+  content: counter(f); position: absolute; left: 0; top: .4mm;
+  font-family: var(--sans); font-size: var(--t-small); font-weight: 600;
+  color: var(--accent);
+}
+ol.findings b, ol.findings strong { font-weight: 600; }
+
+ul, ol { margin: 0 0 var(--space); padding-left: 6mm; }
+li { margin-bottom: 1.8mm; }
+
+/* ── Tables ─────────────────────────────────────────────────── */
+table {
+  width: 100%; border-collapse: collapse; margin: 4mm 0 6mm;
+  font-family: var(--sans); font-size: var(--t-small);
+  page-break-inside: avoid;  /* a table split across pages is the commonest defect */
+}
+th {
+  text-align: left; background: var(--wash); color: var(--ink); font-weight: 600;
+  font-size: var(--t-micro); letter-spacing: .06em; text-transform: uppercase;
+  padding: 2.4mm 3mm; border-bottom: 1.5px solid var(--rule);
+}
+td { padding: 2.6mm 3mm; border-bottom: 1px solid var(--rule); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+
+/* ── Code ───────────────────────────────────────────────────── */
+code {
+  font-family: var(--mono); font-size: 9pt;
+  /* Tight horizontal padding with a compensating negative margin: without it the
+     chip pushes the following comma away and the sentence reads as spaced-out. */
+  background: var(--wash); padding: .3mm 1mm; margin: 0 -.2mm; border-radius: 2px;
+  /* Ligatures off: some faces render `--` as an em-dash, so a copied command breaks. */
+  font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0;
+}
+pre {
+  font-family: var(--mono); font-size: 8.6pt; line-height: 1.5;
+  background: var(--ink); color: #e6ebf1;
+  padding: 4mm 5mm; border-radius: 4px; margin: 3mm 0 5mm;
+  white-space: pre-wrap; word-wrap: break-word;   /* wrap, never clip */
+  font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0;
+  page-break-inside: avoid;
+}
+pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+pre .c { color: #8b9199; }
+
+/* ── Callouts — two kinds only. More and none of them register. ─ */
+.note, .warn {
+  padding: 3.4mm 4.5mm; margin: 4mm 0; font-size: var(--t-small);
+  page-break-inside: avoid; line-height: 1.55;
+}
+.note { background: var(--wash); border-left: 3px solid var(--muted); }
+.warn { background: var(--warn-bg); border-left: 3px solid var(--warn); }
+
+.pull {
+  font-size: 13pt; line-height: 1.5; color: var(--ink);
+  border-left: 3px solid var(--accent); padding-left: 5mm;
+  margin: 6mm 0; font-style: italic;
+}
+.page-break { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<!-- ═══ COVER ═══ -->
+<div class="eyebrow">Atrix · Engineering Audit</div>
+<h1 class="title">Document Title Goes Here</h1>
+<p class="lead">One or two sentences saying exactly what this covers and how far it goes.
+Written so someone who reads nothing else knows what they are holding.</p>
+
+<dl class="meta">
+  <div><dt>Prepared for</dt><dd>Client Name</dd></div>
+  <div><dt>Prepared by</dt><dd>Your Name · Atrix</dd></div>
+  <div><dt>Date</dt><dd>25 August 2026</dd></div>
+  <div><dt>Repository</dt><dd>atrixdigital/repo @ <span class="chip">a1b2c3d</span></dd></div>
+  <div><dt>Scope</dt><dd>apps/web · apps/api</dd></div>
+  <div><dt>Method</dt><dd>Static review + live run</dd></div>
+</dl>
+
+<!-- ═══ SUMMARY — the answer, before any detail ═══ -->
+<div class="section-label">Executive Summary</div>
+
+<p>Lead with the finding, not the method. Someone who stops after this paragraph should
+have the answer. What you did belongs later, if at all.</p>
+
+<p>Give credit where it is due before the problems, and mean it — a report that reads as an
+attack gets dismissed rather than acted on. Then name what matters, in order.</p>
+
+<ol class="findings">
+  <li><b>State the fact in the lead-in.</b> Then the consequence, in prose. Then why it
+  matters — against a rule the project set for itself, a cost, or a risk somebody owns.</li>
+  <li><b>Rank by what hurts first in production.</b> Twenty findings in file order is a
+  list. Ordered by impact, it is an argument someone can act on.</li>
+  <li><b>Name the specific thing.</b> <code>apps/api/src/booking/slots.ts:120</code>, not
+  "the booking logic". Three of twenty-six venues, not "several".</li>
+</ol>
+
+<div class="note"><strong>Say what you did not check.</strong> Every document has a boundary,
+and stating it protects the reader from assuming coverage you never had.</div>
+
+<!-- ═══ BODY ═══ -->
+<div class="section-label">Findings</div>
+
+<h2>A section heading</h2>
+<p>Body prose sets in the serif at eleven point with generous leading, on a measure of
+roughly seventy characters. That measure is not an accident — much wider and the eye loses
+the line return, which is what makes dense reports tiring rather than merely long.</p>
+
+<h3>A subheading</h3>
+<p>Subheadings sit in the sans, in the muted grey, so the hierarchy is legible at a glance
+without another size competing with the headings above it.</p>
+
+<table>
+  <tr><th>Column</th><th>Column</th><th>Column</th></tr>
+  <tr><td>Value</td><td>Value</td><td>Value</td></tr>
+  <tr><td>Value</td><td>Value</td><td>Value</td></tr>
+</table>
+
+<pre><code><span class="c"># commands wrap rather than clip, and ligatures are off</span>
+atrix verify --live</code></pre>
+
+<div class="pull">A pull quote earns its place once or twice in a long document — for the
+sentence you want remembered. Used more often it stops being emphasis.</div>
+
+<div class="warn"><strong>Warnings are amber and rare.</strong> If everything is a warning,
+nothing is.</div>
+
+</body>
+</html>

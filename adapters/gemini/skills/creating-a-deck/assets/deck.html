@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<!--
+  ATRIX DECK TEMPLATE — 16:9, one <section> per slide
+
+  Render:
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+      --headless --disable-gpu --no-pdf-header-footer --virtual-time-budget=10000 \
+      --print-to-pdf="$PWD/deck.pdf" "file://$PWD/deck.html"
+
+  --virtual-time-budget is NOT optional. Without it Chrome prints before the webfonts
+  arrive and silently substitutes — a deck that looks wrong with no error. Check with
+  `pdffonts deck.pdf`; it should say IBMPlex.
+
+  Then render every slide to PNG and look at them. Overflow and clipping are invisible
+  in source and obvious at a glance.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;1,400&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:    #131b25;
+  --muted:  #545a61;
+  --faint:  #8b9199;
+  --accent: #0655b7;
+  --rule:   #d8dde3;
+  --wash:   #f6f8fa;
+
+  --sans:  "IBM Plex Sans", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --serif: "IBM Plex Serif", Charter, Georgia, serif;
+  --mono:  "IBM Plex Mono", ui-monospace, Menlo, monospace;
+
+  /* Slide type is far larger than a document's. If it fits at 18px it does not
+     belong on the slide — it belongs in the document you send afterwards. */
+  --t-kicker:  20px;
+  --t-body:    30px;
+  --t-head:    64px;
+  --t-display: 108px;
+}
+
+@page { size: 1920px 1080px; margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--sans); color: var(--ink); -webkit-font-smoothing: antialiased;
+       counter-reset: slide; }
+
+/* One section per slide. Generous padding is most of what separates a deck that
+   looks composed from one that looks filled. */
+section {
+  width: 1920px; height: 1080px;
+  padding: 130px 150px;
+  page-break-after: always;
+  display: flex; flex-direction: column; justify-content: center;
+  position: relative; background: #fff;
+  overflow: hidden;          /* a slide that overflows is a slide that is too full */
+}
+section:last-child { page-break-after: auto; }
+/* An element counter, not counter(page): the page counter only resolves inside an
+   @page margin box, and used here it silently renders 0. */
+section { counter-increment: slide; }
+section.title { counter-increment: none; }   /* numbering starts after the title */
+
+/* Slide number, quiet, bottom right. */
+section::after {
+  content: counter(slide);
+  position: absolute; right: 150px; bottom: 70px;
+  font-size: 18px; color: var(--faint); letter-spacing: .08em;
+}
+section.title::after { content: ""; }
+
+.kicker {
+  font-size: var(--t-kicker); font-weight: 600;
+  letter-spacing: .18em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 40px;
+}
+
+/* A headline is a CLAIM, not a label. "Bookings grew 4× in nine weeks" beats
+   "Traction" — the claim is the slide and everything else is evidence for it. */
+h1 { font-size: var(--t-head); font-weight: 700; line-height: 1.12;
+     letter-spacing: -.02em; margin: 0 0 44px; max-width: 1400px; }
+h1.display { font-size: var(--t-display); letter-spacing: -.03em; margin-bottom: 36px; }
+
+.sub { font-family: var(--serif); font-size: 34px; line-height: 1.5;
+       color: var(--muted); max-width: 1250px; margin: 0; }
+
+/* Three bullets maximum, six words each — and prefer none. */
+ul { list-style: none; padding: 0; margin: 20px 0 0; max-width: 1400px; }
+li { font-size: var(--t-body); line-height: 1.5; margin-bottom: 26px;
+     padding-left: 44px; position: relative; }
+li::before { content: ""; position: absolute; left: 0; top: 17px;
+             width: 22px; height: 3px; background: var(--accent); }
+
+/* Numbers are the slide people lean forward for. Give the absolute AND the rate:
+   "4×" from two customers to eight is not the claim it appears to be. */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 90px; margin-top: 30px; }
+.stat .n { font-size: 96px; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
+.stat .l { font-size: 24px; color: var(--muted); margin-top: 18px; line-height: 1.4; }
+.stat .w { font-size: 19px; color: var(--faint); margin-top: 8px; }  /* the window */
+
+table { width: 100%; border-collapse: collapse; font-size: 26px; margin-top: 24px; }
+th { text-align: left; font-size: 19px; font-weight: 600; letter-spacing: .1em;
+     text-transform: uppercase; color: var(--faint);
+     padding: 0 28px 18px 0; border-bottom: 2px solid var(--rule); }
+td { padding: 22px 28px 22px 0; border-bottom: 1px solid var(--rule); }
+
+.ask { font-size: 76px; font-weight: 700; letter-spacing: -.02em; margin: 0 0 30px; }
+.ask .amount { color: var(--accent); }
+
+/* Sources go on the slide, small. A number without a source invites the question
+   you least want during the ask. */
+.source { position: absolute; left: 150px; bottom: 70px;
+          font-size: 17px; color: var(--faint); }
+
+.mono { font-family: var(--mono); font-variant-ligatures: none; }
+</style>
+</head>
+<body>
+
+<!-- 1 · TITLE — who you are, in one line someone could repeat -->
+<section class="title">
+  <div class="kicker">Atrix Digital</div>
+  <h1 class="display">One line someone<br>could repeat.</h1>
+  <p class="sub">The positioning sentence. Concrete, no adjectives about ourselves.</p>
+</section>
+
+<!-- 2 · PROBLEM — whose problem, and evidence it is real -->
+<section>
+  <div class="kicker">The problem</div>
+  <h1>State the problem as something that costs somebody money or time.</h1>
+  <ul>
+    <li>Evidence it is real, not asserted</li>
+    <li>Who has it, specifically</li>
+    <li>What they do today instead</li>
+  </ul>
+</section>
+
+<!-- 3 · SOLUTION — plainly, no mechanism yet -->
+<section>
+  <div class="kicker">Our solution</div>
+  <h1>What we built, in one sentence a non-expert repeats correctly.</h1>
+  <p class="sub">The mechanism comes on the next slide, once they want it. Leading with
+  architecture loses the room.</p>
+</section>
+
+<!-- 6 · TRACTION — the slide they actually read -->
+<section>
+  <div class="kicker">Traction</div>
+  <h1>Bookings grew 4× in nine weeks.</h1>
+  <div class="stats">
+    <div class="stat"><div class="n">1,240</div><div class="l">Bookings</div><div class="w">from 310 · 9 weeks</div></div>
+    <div class="stat"><div class="n">27</div><div class="l">Paying venues</div><div class="w">from 6 · Q2</div></div>
+    <div class="stat"><div class="n">92%</div><div class="l">Retained</div><div class="w">month two</div></div>
+  </div>
+  <div class="source">Internal analytics, 1 Jun – 3 Aug 2026. Absolute figures alongside every rate.</div>
+</section>
+
+<!-- 8 · COMPETITION -->
+<section>
+  <div class="kicker">Competition</div>
+  <h1>Who else, and why we win.</h1>
+  <table>
+    <tr><th>Player</th><th>Their bet</th><th>Where we differ</th></tr>
+    <tr><td>Incumbent</td><td>What they optimise for</td><td>Concrete, not "better UX"</td></tr>
+    <tr><td>Challenger</td><td>What they optimise for</td><td>Concrete</td></tr>
+  </table>
+</section>
+
+<!-- 10 · THE ASK — the number, and what it buys -->
+<section>
+  <div class="kicker">The ask</div>
+  <h1 class="ask">Raising <span class="amount">$1.2M</span> seed.</h1>
+  <ul>
+    <li>18 months of runway</li>
+    <li>Two engineers, one commercial hire</li>
+    <li>To reach 200 paying venues</li>
+  </ul>
+</section>
+
+</body>
+</html>

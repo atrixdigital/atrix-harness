@@ -62,19 +62,28 @@ from assuming coverage you never had, and is the difference between a report and
 
 ## 3 · Producing it
 
-HTML with print CSS, rendered by headless Chrome. See
-[references/mechanics.md](references/mechanics.md) for the pipeline, the house design tokens, and
-the traps — including the two that cost real time on this machine.
+**Start from [assets/document.html](assets/document.html)** — do not write CSS from scratch. The
+template is the house style already correct: the type scale, the cover, section rules, the
+findings pattern, tables and callouts. Copy it, replace the content, leave the system alone.
 
 ```bash
+cp <skill>/assets/document.html ./doc.html
+# …write the content…
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
-  --headless --disable-gpu --no-pdf-header-footer \
+  --headless --disable-gpu --no-pdf-header-footer --virtual-time-budget=10000 \
   --print-to-pdf="$PWD/out.pdf" "file://$PWD/doc.html"
 ```
 
-The house style — IBM Plex, the cover pattern, spacing and tables — is in
-[references/design-system.md](references/design-system.md). Match it. A document that looks like
-the others is trusted more than a better-designed one that looks foreign.
+**`--virtual-time-budget` is not optional.** Without it Chrome prints before the webfonts arrive
+and silently substitutes Helvetica and Charter — a document that looks wrong, with no error.
+Confirm with `pdffonts out.pdf`; it should say IBMPlex.
+
+Why the design is what it is, and when to change it, is in
+[references/design-system.md](references/design-system.md). A document that looks like the others
+is trusted more than a better-designed one that looks foreign.
+
+The render pipeline, the alternatives that do not work here, and the traps that have cost real
+time are in [references/mechanics.md](references/mechanics.md). Read it before debugging a render.
 
 ## 4 · Before you hand it over
 

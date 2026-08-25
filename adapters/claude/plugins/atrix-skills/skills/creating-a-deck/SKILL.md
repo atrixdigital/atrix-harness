@@ -64,14 +64,18 @@ Traction is the slide people lean forward for, and the one where credibility is 
 
 ## Producing it
 
-Same pipeline as documents — HTML with print CSS, rendered by headless Chrome. One `section`
-per slide, landscape.
+**Start from [assets/deck.html](assets/deck.html)** — a working 16:9 template with the title,
+problem, solution, traction, competition and ask slides already laid out in the house style.
+Replace the content.
 
-```css
-@page { size: 1920px 1080px; margin: 0; }
-section { width: 1920px; height: 1080px; page-break-after: always;
-          display: flex; flex-direction: column; justify-content: center; padding: 120px; }
+```bash
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --headless --disable-gpu --no-pdf-header-footer --virtual-time-budget=10000 \
+  --print-to-pdf="$PWD/deck.pdf" "file://$PWD/deck.html"
 ```
+
+`--virtual-time-budget` is not optional — without it the webfonts do not arrive and Chrome
+substitutes silently. Check `pdffonts deck.pdf` says IBMPlex.
 
 Landscape 16:9 at that size gives a PDF that projects cleanly and reads on a laptop. The
 `producing-a-document` skill carries the render command and the traps — load it rather than
