@@ -72,6 +72,7 @@ runs it and concludes the tool is broken. Extract every command and path you nam
 each still exists. Count anything you counted.
 
 **Fonts must be embedded, and must be the right ones.** `pdffonts` should show `emb yes` *and*
-name IBMPlex. Seeing HelveticaNeue and Charter means the webfonts never loaded — add
+name Montserrat, Poppins and JetBrainsMono. Seeing HelveticaNeue or Charter means the
+webfonts never loaded — add
 `--virtual-time-budget`. A document that renders on your
 machine and substitutes Times on the client's is not the document you reviewed.

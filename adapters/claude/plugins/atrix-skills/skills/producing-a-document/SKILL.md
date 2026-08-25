@@ -76,7 +76,7 @@ cp <skill>/assets/document.html ./doc.html
 
 **`--virtual-time-budget` is not optional.** Without it Chrome prints before the webfonts arrive
 and silently substitutes Helvetica and Charter — a document that looks wrong, with no error.
-Confirm with `pdffonts out.pdf`; it should say IBMPlex.
+Confirm with `pdffonts out.pdf`; it should name Montserrat and Poppins.
 
 Why the design is what it is, and when to change it, is in
 [references/design-system.md](references/design-system.md). A document that looks like the others

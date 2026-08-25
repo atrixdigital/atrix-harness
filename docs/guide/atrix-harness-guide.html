@@ -5,23 +5,30 @@
 <title>Atrix Harness — Developer Guide</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;1,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* ─────────────────────────────────────────────────────────────
    TOKENS — the whole design system. Change here, never inline.
    ───────────────────────────────────────────────────────────── */
 :root {
-  /* Palette, taken from the existing Atrix audits. Restraint is the point:
-     one accent, used for the eyebrow and nothing else on most pages. */
-  --ink:      #131b25;   /* headings, body */
-  --muted:    #545a61;   /* secondary prose, labels */
-  --faint:    #8b9199;   /* metadata, page numbers */
-  --accent:   #0655b7;   /* the one accent */
-  --rule:     #d8dde3;   /* hairlines */
-  --rule-str: #131b25;   /* the heavy rule under the cover block */
-  --wash:     #f6f8fa;   /* table headers, callout grounds */
+  /* Brand from atrix.dev — projects/atrix.dev-v2/app/globals.css. The warm run
+     yellow → orange → pink is the mark; it belongs to rules and bars, never to
+     small type. Anything at label size uses --accent, which is the same family
+     pushed dark enough to actually read on white. */
+  --brand-from: #facc14;
+  --brand-via:  #f97415;
+  --brand-to:   #ec4699;
+  --brand: linear-gradient(90deg, var(--brand-from), var(--brand-via), var(--brand-to));
+
+  --ink:      #09090b;   /* headings, body */
+  --muted:    #52525b;   /* secondary prose, labels */
+  --faint:    #a1a1aa;   /* metadata, page numbers */
+  --accent:   #af6612;   /* eyebrows, counters, run-in leads */
+  --rule:     #e4e4e7;   /* hairlines */
+  --rule-str: #09090b;   /* the heavy rule under the cover block */
+  --wash:     #fafafa;   /* table headers, callout grounds */
   --warn:     #b45309;
-  --warn-bg:  #fffbeb;
+  --warn-bg:  #fef8ec;
 
   /* Type scale — major third (1.25) off an 11pt body. A consistent ratio is
      what makes a layout feel composed rather than assembled. */
@@ -38,9 +45,11 @@
   --lead:      1.62;
   --space:     4.2mm;
 
-  --sans:  "IBM Plex Sans", -apple-system, "Helvetica Neue", Arial, sans-serif;
-  --serif: "IBM Plex Serif", Charter, Georgia, "Times New Roman", serif;
-  --mono:  "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  /* --sans is Montserrat (headings), --serif is the BODY face, Poppins. The
+     names are historical; the roles are what matter. */
+  --sans:  "Montserrat", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --serif: "Poppins", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --mono:  "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
 }
 
 /* ── Page ───────────────────────────────────────────────────── */
@@ -58,7 +67,7 @@
 
 * { box-sizing: border-box; }
 body {
-  font-family: var(--serif);
+  font-family: var(--serif); font-weight: 300;
   font-size: var(--t-body);
   line-height: var(--lead);
   color: var(--ink);
@@ -75,7 +84,7 @@ body {
   color: var(--accent); margin-bottom: 6mm;
 }
 .title {
-  font-family: var(--sans); font-size: var(--t-title); font-weight: 700;
+  font-family: var(--sans); font-size: var(--t-title); font-weight: 800;
   line-height: 1.12; letter-spacing: -.015em;
   color: var(--ink); margin: 0 0 5mm;
 }
@@ -112,7 +121,8 @@ body {
   padding-bottom: 2mm; border-bottom: 2px solid var(--rule-str);
   margin: 12mm 0 5mm; page-break-after: avoid;
 }
-h1, h2, h3 { font-family: var(--sans); color: var(--ink); page-break-after: avoid; }
+h1, h2, h3 { font-family: var(--sans); font-weight: 700; letter-spacing: -.015em;
+             color: var(--ink); page-break-after: avoid; }
 h1 { font-size: var(--t-h1); font-weight: 700; letter-spacing: -.01em; margin: 10mm 0 3mm; }
 h2 { font-size: var(--t-h2); font-weight: 600; margin: 8mm 0 2.5mm; }
 h3 { font-size: var(--t-h3); font-weight: 600; color: var(--muted); margin: 6mm 0 2mm; }
@@ -191,6 +201,10 @@ pre .c { color: #8b9199; }
 
 /* ── Guide-specific, layered on the house system ─────────────── */
 .cover { height: 218mm; display: flex; flex-direction: column; justify-content: center; page-break-after: always; }
+/* The brand run. It is the one piece of colour on the cover and the reason this
+   reads as Atrix rather than as a generic report. */
+.cover::before { content: ""; display: block; height: 3px; background: var(--brand);
+                 margin-bottom: 9mm; }
 .cover .title { font-size: 38pt; }
 .cover .lead  { font-size: 13.5pt; max-width: 140mm; }
 .part { page-break-before: always; }

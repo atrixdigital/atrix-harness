@@ -75,7 +75,7 @@ Replace the content.
 ```
 
 `--virtual-time-budget` is not optional — without it the webfonts do not arrive and Chrome
-substitutes silently. Check `pdffonts deck.pdf` says IBMPlex.
+substitutes silently. Check `pdffonts deck.pdf` names Montserrat and Poppins.
 
 Landscape 16:9 at that size gives a PDF that projects cleanly and reads on a laptop. The
 `producing-a-document` skill carries the render command and the traps — load it rather than
@@ -84,7 +84,8 @@ rediscovering them.
 Type is much larger than a document: headline around 60px, body 28–32px, nothing below 20px.
 **If it fits at 18px it does not belong on the slide.**
 
-Keep the house style — IBM Plex, the same palette — so a deck and a brief look like they came
+Keep the house style — Montserrat and Poppins, the same warm palette, the brand run across the
+top of every slide — so a deck and a brief look like they came
 from the same firm.
 
 ## Before you present it

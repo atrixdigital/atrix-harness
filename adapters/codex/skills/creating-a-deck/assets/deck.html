@@ -9,7 +9,7 @@
 
   --virtual-time-budget is NOT optional. Without it Chrome prints before the webfonts
   arrive and silently substitutes — a deck that looks wrong with no error. Check with
-  `pdffonts deck.pdf`; it should say IBMPlex.
+  `pdffonts deck.pdf`; it should name Montserrat and Poppins.
 
   Then render every slide to PNG and look at them. Overflow and clipping are invisible
   in source and obvious at a glance.
@@ -20,19 +20,26 @@
 <title>Deck</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;1,400&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Poppins:wght@300;400;500&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --ink:    #131b25;
-  --muted:  #545a61;
-  --faint:  #8b9199;
-  --accent: #0655b7;
-  --rule:   #d8dde3;
-  --wash:   #f6f8fa;
+  /* Brand taken from atrix.dev — see the document template. The warm run is the
+     signature; the deep amber carries anything small enough to need legibility. */
+  --brand-from: #facc14;
+  --brand-via:  #f97415;
+  --brand-to:   #ec4699;
+  --brand: linear-gradient(90deg, var(--brand-from), var(--brand-via), var(--brand-to));
 
-  --sans:  "IBM Plex Sans", -apple-system, "Helvetica Neue", Arial, sans-serif;
-  --serif: "IBM Plex Serif", Charter, Georgia, serif;
-  --mono:  "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --ink:    #09090b;
+  --muted:  #52525b;
+  --faint:  #a1a1aa;
+  --accent: #af6612;
+  --rule:   #e4e4e7;
+  --wash:   #fafafa;
+
+  --head: "Montserrat", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --body: "Poppins", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
 
   /* Slide type is far larger than a document's. If it fits at 18px it does not
      belong on the slide — it belongs in the document you send afterwards. */
@@ -45,7 +52,7 @@
 @page { size: 1920px 1080px; margin: 0; }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
-body { font-family: var(--sans); color: var(--ink); -webkit-font-smoothing: antialiased;
+body { font-family: var(--body); font-weight: 300; color: var(--ink); -webkit-font-smoothing: antialiased;
        counter-reset: slide; }
 
 /* One section per slide. Generous padding is most of what separates a deck that
@@ -59,6 +66,12 @@ section {
   overflow: hidden;          /* a slide that overflows is a slide that is too full */
 }
 section:last-child { page-break-after: auto; }
+/* The brand run, as a bar across the top of every slide. This is the signature —
+   it is why a deck and the site read as the same company. */
+section::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0;
+  height: 10px; background: var(--brand);
+}
 /* An element counter, not counter(page): the page counter only resolves inside an
    @page margin box, and used here it silently renders 0. */
 section { counter-increment: slide; }
@@ -73,18 +86,18 @@ section::after {
 section.title::after { content: ""; }
 
 .kicker {
-  font-size: var(--t-kicker); font-weight: 600;
+  font-family: var(--head); font-size: var(--t-kicker); font-weight: 700;
   letter-spacing: .18em; text-transform: uppercase;
   color: var(--accent); margin-bottom: 40px;
 }
 
 /* A headline is a CLAIM, not a label. "Bookings grew 4× in nine weeks" beats
    "Traction" — the claim is the slide and everything else is evidence for it. */
-h1 { font-size: var(--t-head); font-weight: 700; line-height: 1.12;
-     letter-spacing: -.02em; margin: 0 0 44px; max-width: 1400px; }
+h1 { font-family: var(--head); font-size: var(--t-head); font-weight: 800; line-height: 1.1;
+     letter-spacing: -.03em; margin: 0 0 44px; max-width: 1400px; }
 h1.display { font-size: var(--t-display); letter-spacing: -.03em; margin-bottom: 36px; }
 
-.sub { font-family: var(--serif); font-size: 34px; line-height: 1.5;
+.sub { font-family: var(--body); font-size: 34px; line-height: 1.5;
        color: var(--muted); max-width: 1250px; margin: 0; }
 
 /* Three bullets maximum, six words each — and prefer none. */
@@ -97,7 +110,7 @@ li::before { content: ""; position: absolute; left: 0; top: 17px;
 /* Numbers are the slide people lean forward for. Give the absolute AND the rate:
    "4×" from two customers to eight is not the claim it appears to be. */
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 90px; margin-top: 30px; }
-.stat .n { font-size: 96px; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
+.stat .n { font-family: var(--head); font-size: 96px; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
 .stat .l { font-size: 24px; color: var(--muted); margin-top: 18px; line-height: 1.4; }
 .stat .w { font-size: 19px; color: var(--faint); margin-top: 8px; }  /* the window */
 
@@ -107,8 +120,15 @@ th { text-align: left; font-size: 19px; font-weight: 600; letter-spacing: .1em;
      padding: 0 28px 18px 0; border-bottom: 2px solid var(--rule); }
 td { padding: 22px 28px 22px 0; border-bottom: 1px solid var(--rule); }
 
-.ask { font-size: 76px; font-weight: 700; letter-spacing: -.02em; margin: 0 0 30px; }
-.ask .amount { color: var(--accent); }
+.ask { font-family: var(--head); font-size: 76px; font-weight: 800; letter-spacing: -.02em; margin: 0 0 30px; }
+/* The number the room is there for, in brand orange over a gradient underline.
+   Gradient-clipped TEXT was tried first and prints a visible box around the glyphs
+   in Chrome's PDF output — a screen trick that does not survive the print path. */
+.ask .amount { color: var(--brand-via); position: relative; white-space: nowrap; }
+.ask .amount::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -.14em;
+  height: 6px; background: var(--brand); border-radius: 3px;
+}
 
 /* Sources go on the slide, small. A number without a source invites the question
    you least want during the ask. */

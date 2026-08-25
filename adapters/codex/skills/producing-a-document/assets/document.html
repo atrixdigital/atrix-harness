@@ -2,10 +2,9 @@
 <!--
   ATRIX DOCUMENT TEMPLATE
 
-  Start here rather than from a blank file. Everything below is the house style,
-  already correct: the typographic scale, the cover, section rules, tables, callouts.
-  Replace the content; leave the system alone unless you are changing it for every
-  document.
+  The brand is not invented here. Every token below is lifted from atrix.dev
+  (projects/atrix.dev-v2/app/globals.css and tailwind.config.ts) so a document
+  and the site read as the same company. Change the brand there, not here.
 
   Render:
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
@@ -13,199 +12,185 @@
       --print-to-pdf="$PWD/out.pdf" "file://$PWD/document.html"
 
   --virtual-time-budget is NOT optional. Without it Chrome prints before the webfonts
-  arrive and silently substitutes Helvetica and Charter — a document that looks wrong
-  and gives no error. `pdffonts out.pdf` should say IBMPlex.
-
-  Then verify — see references/mechanics.md. Look at the pages; check pdffonts says
-  the faces embedded rather than substituted.
+  arrive and silently substitutes — a document that looks wrong with no error.
+  `pdffonts out.pdf` must say Montserrat and Poppins.
 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Document Title</title>
+<title>Document</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Poppins:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* ─────────────────────────────────────────────────────────────
-   TOKENS — the whole design system. Change here, never inline.
+   BRAND TOKENS — taken from atrix.dev, not chosen here.
    ───────────────────────────────────────────────────────────── */
 :root {
-  /* Palette, taken from the existing Atrix audits. Restraint is the point:
-     one accent, used for the eyebrow and nothing else on most pages. */
-  --ink:      #131b25;   /* headings, body */
-  --muted:    #545a61;   /* secondary prose, labels */
-  --faint:    #8b9199;   /* metadata, page numbers */
-  --accent:   #0655b7;   /* the one accent */
-  --rule:     #d8dde3;   /* hairlines */
-  --rule-str: #131b25;   /* the heavy rule under the cover block */
-  --wash:     #f6f8fa;   /* table headers, callout grounds */
-  --warn:     #b45309;
-  --warn-bg:  #fffbeb;
+  /* The warm run: yellow → orange → pink. globals.css calls it "the run this
+     product already had… what reads as Atrix here". It is the signature. */
+  --brand-from: #facc14;
+  --brand-via:  #f97415;
+  --brand-to:   #ec4699;
+  --brand: linear-gradient(90deg, var(--brand-from), var(--brand-via), var(--brand-to));
 
-  /* Type scale — major third (1.25) off an 11pt body. A consistent ratio is
-     what makes a layout feel composed rather than assembled. */
-  --t-body:    11pt;
-  --t-small:   9.5pt;
-  --t-micro:   7.6pt;   /* labels, letterspaced */
-  --t-h3:      11.5pt;
-  --t-h2:      14pt;
-  --t-h1:      17.5pt;
-  --t-title:   32pt;
+  /* Deep amber. Chosen on the site specifically to stay legible on small text,
+     which is why it — and not a gradient stop — carries labels here. */
+  --accent:       #af6612;
+  --accent-wash:  #fef8ec;
 
-  /* Vertical rhythm. Everything is a multiple of the body leading, so blocks
-     land on a common baseline instead of drifting. */
-  --lead:      1.62;
-  --space:     4.2mm;
+  /* Zinc, matching the site's foreground/muted/border scale. */
+  --ink:    #09090b;
+  --muted:  #52525b;
+  --faint:  #a1a1aa;
+  --rule:   #e4e4e7;
+  --wash:   #fafafa;
 
-  --sans:  "IBM Plex Sans", -apple-system, "Helvetica Neue", Arial, sans-serif;
-  --serif: "IBM Plex Serif", Charter, Georgia, "Times New Roman", serif;
-  --mono:  "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  /* Type scale — major third off 10.5pt. Poppins is geometric, so it needs a
+     little more leading than a serif at the same size to stay comfortable. */
+  --t-body:   10.5pt;
+  --t-small:  9pt;
+  --t-micro:  7.4pt;
+  --t-h3:     11pt;
+  --t-h2:     13.5pt;
+  --t-h1:     18pt;
+  --t-title:  34pt;
+
+  --lead:  1.68;
+  --space: 4mm;
+
+  --head: "Montserrat", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --body: "Poppins", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
 }
 
-/* ── Page ───────────────────────────────────────────────────── */
 @page {
   size: Letter;
-  /* Generous outer and bottom margins are most of what reads as premium. */
   margin: 22mm 20mm 24mm 20mm;
   @bottom-center {
     content: counter(page);
-    font-family: var(--sans); font-size: var(--t-micro);
-    color: var(--faint); letter-spacing: .08em;
+    font-family: var(--head); font-size: var(--t-micro);
+    color: var(--faint); letter-spacing: .1em;
   }
 }
 @page :first { @bottom-center { content: ""; } }
 
 * { box-sizing: border-box; }
 body {
-  font-family: var(--serif);
-  font-size: var(--t-body);
-  line-height: var(--lead);
-  color: var(--ink);
-  margin: 0;
-  /* Measure: 45–75 characters. Full-width body text is the fastest way to look cheap. */
-  max-width: 168mm;
+  font-family: var(--body); font-size: var(--t-body); line-height: var(--lead);
+  color: var(--ink); margin: 0; max-width: 170mm;
+  font-weight: 300;                 /* Poppins reads heavy at 400 in print */
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── Cover ──────────────────────────────────────────────────── */
+/* ── The signature: a gradient rule. Used twice per document at most. ── */
+.brand-rule { height: 3.2pt; background: var(--brand); border-radius: 2pt; margin-bottom: 9mm; }
+.brand-rule.slim { height: 2pt; margin: 0 0 5mm; }
+
+/* ── Cover ───────────────────────────────────────────────────── */
 .eyebrow {
-  font-family: var(--sans); font-size: var(--t-micro); font-weight: 600;
-  letter-spacing: .16em; text-transform: uppercase;
-  color: var(--accent); margin-bottom: 6mm;
+  font-family: var(--head); font-size: var(--t-micro); font-weight: 700;
+  letter-spacing: .2em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 5mm;
 }
 .title {
-  font-family: var(--sans); font-size: var(--t-title); font-weight: 700;
-  line-height: 1.12; letter-spacing: -.015em;
+  font-family: var(--head); font-size: var(--t-title); font-weight: 800;
+  line-height: 1.08; letter-spacing: -.025em;   /* Montserrat needs tightening at display size */
   color: var(--ink); margin: 0 0 5mm;
 }
 .lead {
-  font-size: 12.5pt; line-height: 1.55; color: var(--muted);
-  margin: 0 0 9mm; max-width: 158mm; text-wrap: pretty;
+  font-size: 12pt; font-weight: 300; line-height: 1.55;
+  color: var(--muted); margin: 0 0 10mm; max-width: 152mm; text-wrap: pretty;
 }
 
-/* Metadata grid — prepared for, date and the exact version are what make a
-   document citable months later. Not decoration. */
 .meta {
-  display: grid; grid-template-columns: repeat(4, 1fr);
-  gap: 5mm 6mm; padding: 5mm 0;
-  border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 5mm 6mm;
+  padding: 5mm 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
   margin-bottom: 9mm;
 }
 .meta dt {
-  font-family: var(--sans); font-size: var(--t-micro); font-weight: 600;
-  letter-spacing: .1em; text-transform: uppercase;
-  color: var(--faint); margin-bottom: 1.5mm;
+  font-family: var(--head); font-size: var(--t-micro); font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--faint); margin-bottom: 1.6mm;
 }
-.meta dd { font-family: var(--sans); font-size: var(--t-small); margin: 0; color: var(--ink); }
+.meta dd { font-family: var(--body); font-size: var(--t-small); font-weight: 400; margin: 0; }
 .chip {
-  font-family: var(--mono); font-size: 7.6pt;
-  background: var(--wash); padding: .6mm 1.4mm; border-radius: 2px; color: var(--muted);
+  font-family: var(--mono); font-size: 7.4pt;
+  background: var(--wash); border: 1px solid var(--rule);
+  padding: .5mm 1.4mm; border-radius: 3px; color: var(--muted);
 }
 
-/* ── Headings ───────────────────────────────────────────────── */
-/* Section label + rule: the pattern the existing audits use. It gives a long
-   document navigable landmarks without a heavy heading on every page. */
+/* ── Headings ────────────────────────────────────────────────── */
 .section-label {
-  font-family: var(--sans); font-size: var(--t-micro); font-weight: 600;
-  letter-spacing: .16em; text-transform: uppercase; color: var(--ink);
-  padding-bottom: 2mm; border-bottom: 2px solid var(--rule-str);
-  margin: 12mm 0 5mm; page-break-after: avoid;
+  font-family: var(--head); font-size: var(--t-micro); font-weight: 700;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--accent);
+  margin: 0 0 3mm; page-break-after: avoid;
 }
-h1, h2, h3 { font-family: var(--sans); color: var(--ink); page-break-after: avoid; }
-h1 { font-size: var(--t-h1); font-weight: 700; letter-spacing: -.01em; margin: 10mm 0 3mm; }
-h2 { font-size: var(--t-h2); font-weight: 600; margin: 8mm 0 2.5mm; }
+h1, h2, h3 { font-family: var(--head); color: var(--ink); page-break-after: avoid; }
+h1 { font-size: var(--t-h1); font-weight: 800; letter-spacing: -.018em; margin: 0 0 4mm; }
+h2 { font-size: var(--t-h2); font-weight: 700; letter-spacing: -.01em; margin: 9mm 0 2.5mm; }
 h3 { font-size: var(--t-h3); font-weight: 600; color: var(--muted); margin: 6mm 0 2mm; }
 p  { margin: 0 0 var(--space); }
-p + p { margin-top: calc(var(--space) * -.25); }
+strong, b { font-weight: 600; color: var(--ink); }
 
-/* First paragraph after a section label carries the weight of the section. */
-.section-label + p { font-size: 12pt; line-height: 1.58; }
-
-/* ── Findings: the house pattern ────────────────────────────── */
-/* Bold lead-in states the fact; the prose that follows gives the consequence
-   and why it matters. A bare bullet carries the same information and moves nobody. */
-ol.findings { counter-reset: f; list-style: none; padding: 0; margin: 0; }
+/* ── Findings ────────────────────────────────────────────────── */
+ol.findings { counter-reset: f; list-style: none; padding: 0; margin: 0 0 var(--space); }
 ol.findings > li {
   counter-increment: f; position: relative;
-  padding-left: 9mm; margin-bottom: 5mm; page-break-inside: avoid;
+  padding-left: 10mm; margin-bottom: 5mm; page-break-inside: avoid;
 }
 ol.findings > li::before {
-  content: counter(f); position: absolute; left: 0; top: .4mm;
-  font-family: var(--sans); font-size: var(--t-small); font-weight: 600;
-  color: var(--accent);
+  content: counter(f, decimal-leading-zero); position: absolute; left: 0; top: .2mm;
+  font-family: var(--head); font-size: var(--t-small); font-weight: 800;
+  color: var(--accent); letter-spacing: -.02em;
 }
-ol.findings b, ol.findings strong { font-weight: 600; }
-
-ul, ol { margin: 0 0 var(--space); padding-left: 6mm; }
+ul, ol { margin: 0 0 var(--space); padding-left: 5.5mm; }
 li { margin-bottom: 1.8mm; }
+ul li::marker { color: var(--accent); }
 
-/* ── Tables ─────────────────────────────────────────────────── */
+/* ── Tables ──────────────────────────────────────────────────── */
 table {
   width: 100%; border-collapse: collapse; margin: 4mm 0 6mm;
-  font-family: var(--sans); font-size: var(--t-small);
-  page-break-inside: avoid;  /* a table split across pages is the commonest defect */
+  font-size: var(--t-small); page-break-inside: avoid;
 }
 th {
-  text-align: left; background: var(--wash); color: var(--ink); font-weight: 600;
-  font-size: var(--t-micro); letter-spacing: .06em; text-transform: uppercase;
-  padding: 2.4mm 3mm; border-bottom: 1.5px solid var(--rule);
+  text-align: left; font-family: var(--head); font-weight: 700;
+  font-size: var(--t-micro); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--faint); padding: 0 3mm 2.4mm 0; border-bottom: 1.5px solid var(--ink);
 }
-td { padding: 2.6mm 3mm; border-bottom: 1px solid var(--rule); vertical-align: top; }
+td { padding: 2.6mm 3mm 2.6mm 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
 tr:last-child td { border-bottom: none; }
 
-/* ── Code ───────────────────────────────────────────────────── */
+/* ── Code ────────────────────────────────────────────────────── */
 code {
-  font-family: var(--mono); font-size: 9pt;
-  /* Tight horizontal padding with a compensating negative margin: without it the
-     chip pushes the following comma away and the sentence reads as spaced-out. */
-  background: var(--wash); padding: .3mm 1mm; margin: 0 -.2mm; border-radius: 2px;
-  /* Ligatures off: some faces render `--` as an em-dash, so a copied command breaks. */
+  font-family: var(--mono); font-size: 8.6pt;
+  background: var(--wash); border: 1px solid var(--rule);
+  padding: .3mm 1mm; margin: 0 -.2mm; border-radius: 3px;
+  /* Ligatures off: some faces render `--` as an em-dash and a copied command breaks. */
   font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0;
 }
 pre {
-  font-family: var(--mono); font-size: 8.6pt; line-height: 1.5;
-  background: var(--ink); color: #e6ebf1;
-  padding: 4mm 5mm; border-radius: 4px; margin: 3mm 0 5mm;
-  white-space: pre-wrap; word-wrap: break-word;   /* wrap, never clip */
+  font-family: var(--mono); font-size: 8.4pt; line-height: 1.55;
+  background: var(--ink); color: #e4e4e7;
+  padding: 4.5mm 5mm; border-radius: 5px; margin: 3mm 0 5mm;
+  white-space: pre-wrap; word-wrap: break-word;
   font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0;
   page-break-inside: avoid;
 }
-pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
-pre .c { color: #8b9199; }
+pre code { background: none; border: none; padding: 0; color: inherit; font-size: inherit; }
+pre .c { color: #a1a1aa; }
+pre .g { color: var(--brand-from); }
 
-/* ── Callouts — two kinds only. More and none of them register. ─ */
-.note, .warn {
-  padding: 3.4mm 4.5mm; margin: 4mm 0; font-size: var(--t-small);
-  page-break-inside: avoid; line-height: 1.55;
-}
-.note { background: var(--wash); border-left: 3px solid var(--muted); }
-.warn { background: var(--warn-bg); border-left: 3px solid var(--warn); }
+/* ── Callouts — amber is the brand's warning register already. ── */
+.note, .warn { padding: 3.4mm 4.5mm; margin: 4mm 0; font-size: var(--t-small);
+               line-height: 1.6; page-break-inside: avoid; border-radius: 0 4px 4px 0; }
+.note { background: var(--wash);       border-left: 3px solid var(--faint); }
+.warn { background: var(--accent-wash); border-left: 3px solid var(--accent); }
 
 .pull {
-  font-size: 13pt; line-height: 1.5; color: var(--ink);
-  border-left: 3px solid var(--accent); padding-left: 5mm;
-  margin: 6mm 0; font-style: italic;
+  font-family: var(--head); font-size: 13pt; font-weight: 600; line-height: 1.45;
+  letter-spacing: -.01em; padding-left: 5mm; margin: 7mm 0;
+  border-left: 3px solid transparent;
+  border-image: var(--brand) 1;      /* the gradient, as an edge */
 }
 .page-break { page-break-before: always; }
 </style>
@@ -213,52 +198,57 @@ pre .c { color: #8b9199; }
 <body>
 
 <!-- ═══ COVER ═══ -->
+<div class="brand-rule"></div>
 <div class="eyebrow">Atrix · Engineering Audit</div>
 <h1 class="title">Document Title Goes Here</h1>
-<p class="lead">One or two sentences saying exactly what this covers and how far it goes.
-Written so someone who reads nothing else knows what they are holding.</p>
+<p class="lead">One or two sentences saying exactly what this covers and how far it goes,
+so someone who reads nothing else knows what they are holding.</p>
 
 <dl class="meta">
   <div><dt>Prepared for</dt><dd>Client Name</dd></div>
   <div><dt>Prepared by</dt><dd>Your Name · Atrix</dd></div>
   <div><dt>Date</dt><dd>25 August 2026</dd></div>
-  <div><dt>Repository</dt><dd>atrixdigital/repo @ <span class="chip">a1b2c3d</span></dd></div>
+  <div><dt>Repository</dt><dd>atrixdigital/repo <span class="chip">a1b2c3d</span></dd></div>
   <div><dt>Scope</dt><dd>apps/web · apps/api</dd></div>
   <div><dt>Method</dt><dd>Static review + live run</dd></div>
 </dl>
 
-<!-- ═══ SUMMARY — the answer, before any detail ═══ -->
-<div class="section-label">Executive Summary</div>
+<!-- ═══ SUMMARY ═══ -->
+<div class="section-label">Executive summary</div>
+<h1>The answer, before any detail.</h1>
 
-<p>Lead with the finding, not the method. Someone who stops after this paragraph should
-have the answer. What you did belongs later, if at all.</p>
+<p>Lead with the finding, not the method. Someone who stops after this paragraph should have
+the answer. What you did belongs later, if at all.</p>
 
 <p>Give credit where it is due before the problems, and mean it — a report that reads as an
 attack gets dismissed rather than acted on. Then name what matters, in order.</p>
 
 <ol class="findings">
-  <li><b>State the fact in the lead-in.</b> Then the consequence, in prose. Then why it
-  matters — against a rule the project set for itself, a cost, or a risk somebody owns.</li>
-  <li><b>Rank by what hurts first in production.</b> Twenty findings in file order is a
-  list. Ordered by impact, it is an argument someone can act on.</li>
-  <li><b>Name the specific thing.</b> <code>apps/api/src/booking/slots.ts:120</code>, not
-  "the booking logic". Three of twenty-six venues, not "several".</li>
+  <li><strong>State the fact in the lead-in.</strong> Then the consequence, in prose. Then why
+  it matters — against a rule the project set for itself, a cost, or a risk somebody owns.</li>
+  <li><strong>Rank by what hurts first in production.</strong> Twenty findings in file order is
+  a list. Ordered by impact, it is an argument someone can act on.</li>
+  <li><strong>Name the specific thing.</strong> <code>apps/api/src/booking/slots.ts:120</code>,
+  not "the booking logic". Three of twenty-six venues, not "several".</li>
 </ol>
 
 <div class="note"><strong>Say what you did not check.</strong> Every document has a boundary,
 and stating it protects the reader from assuming coverage you never had.</div>
 
 <!-- ═══ BODY ═══ -->
+<div class="page-break"></div>
+<div class="brand-rule slim"></div>
 <div class="section-label">Findings</div>
+<h1>A section that starts a page.</h1>
 
-<h2>A section heading</h2>
-<p>Body prose sets in the serif at eleven point with generous leading, on a measure of
-roughly seventy characters. That measure is not an accident — much wider and the eye loses
-the line return, which is what makes dense reports tiring rather than merely long.</p>
+<h2>A heading</h2>
+<p>Body prose sets in Poppins at three hundred weight, because the geometric face reads heavy
+at four hundred in print. The measure is held near seventy characters — much wider and the eye
+loses the line return, which is what makes long reports tiring rather than merely long.</p>
 
 <h3>A subheading</h3>
-<p>Subheadings sit in the sans, in the muted grey, so the hierarchy is legible at a glance
-without another size competing with the headings above it.</p>
+<p>Subheadings sit in Montserrat at six hundred in the muted grey, so hierarchy is legible at a
+glance without another size competing with the headings above it.</p>
 
 <table>
   <tr><th>Column</th><th>Column</th><th>Column</th></tr>
@@ -269,11 +259,11 @@ without another size competing with the headings above it.</p>
 <pre><code><span class="c"># commands wrap rather than clip, and ligatures are off</span>
 atrix verify --live</code></pre>
 
-<div class="pull">A pull quote earns its place once or twice in a long document — for the
-sentence you want remembered. Used more often it stops being emphasis.</div>
+<div class="pull">A pull quote earns its place once or twice — for the sentence you want
+remembered. The gradient edge is the brand; used more often it stops being emphasis.</div>
 
-<div class="warn"><strong>Warnings are amber and rare.</strong> If everything is a warning,
-nothing is.</div>
+<div class="warn"><strong>Warnings use the amber register</strong>, which is already the
+brand's. If everything is a warning, nothing is.</div>
 
 </body>
 </html>
