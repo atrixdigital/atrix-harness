@@ -52,6 +52,13 @@ survives arming, so the behaviour can always be inspected without disabling the 
 Log the headline finding with `console.error` so it surfaces in platform logs and error tracking
 even when nobody reads the JSON response.
 
+## Related skills
+
+Metadata, sitemaps and the caching traps that deindex pages are in `seo-and-analytics`. Locale
+routing and static rendering are in `nextjs-i18n`. Data access for new projects is
+`kysely-postgres`; shared cross-process state is `caching-with-redis`. A new project starts from
+`scaffolding-a-web-app`.
+
 ## Caching is a decision, not a default
 
 State it explicitly for every fetch and route — `revalidate`, `cache`, `dynamic`. A page that

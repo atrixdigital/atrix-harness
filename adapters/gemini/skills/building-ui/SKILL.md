@@ -59,7 +59,13 @@ Five minutes now, a rewrite later:
 Check **375px** and both themes before calling it done. Nothing may scroll horizontally; wide
 content — tables, code, diagrams — scrolls inside its own container.
 
-Define colours as tokens, never a hardcoded hex in a component.
+Define colours as tokens, never a hardcoded hex in a component, and never `dark:` where a token
+would do — the `tailwind-theming` skill has the token structure and why `@theme inline` is what
+makes a theme swap work at all.
+
+User-visible strings go through the translation layer rather than into JSX, even in a
+single-language product; `nextjs-i18n` covers the extraction and why retrofitting is the expensive
+path. Typefaces and the type scale are in `typography-and-fonts`.
 
 ## Verify by using it
 
