@@ -21,6 +21,15 @@ interface Check {
   name: string;
   /** What the delivery path is for, so a failure says what a user loses. */
   matters: string;
+  /**
+   * Run from inside the harness workspace rather than a scratch directory.
+   *
+   * Rules reach Claude Code through the workspace `CLAUDE.md`, and `CLAUDE.md` is read
+   * from the working directory upward — so a probe run in `/tmp` correctly sees no rules
+   * and tells you nothing about whether the delivery path works. It is also an honest
+   * statement of the boundary: the rules apply to work done inside the workspace.
+   */
+  inWorkspace?: boolean;
   run: (pluginDir: string, workspace: string) => Promise<Result>;
 }
 
@@ -72,13 +81,22 @@ const CHECKS: Check[] = [
   {
     name: 'the rules reach the model',
     matters: 'every rule in core/ is inert — this was broken and nothing structural caught it',
+    inWorkspace: true,
     run: async (pluginDir, workspace) => {
+      // Probe the LAST rule alphabetically, and a detail that appears nowhere else.
+      //
+      // This check previously asked for the bounded-recovery escalation levels and passed
+      // for months while all 19 rules were being dropped — because that answer is also in
+      // the 60-line manual head, which was the only part still arriving. A probe whose
+      // answer exists earlier in the payload cannot detect truncation.
+      //
+      // `write-adr` sits at ~36k of a ~38k bundle, so it is the first thing any cap eats.
       const result = ask(
-        'Without using any tools, answer in one short line: what are the three escalation levels of the bounded-recovery rule? If you have no such rule in your context, reply exactly: NOT LOADED',
+        'Without using any tools, answer in one short line: per the write-adr rule, may you delete or rewrite an ADR that is already accepted? If you have no such rule in your context, reply exactly: NOT LOADED',
         pluginDir,
         workspace,
       );
-      const loaded = /retry/i.test(result.evidence) && /replan/i.test(result.evidence);
+      const loaded = /supersede/i.test(result.evidence);
       return { passed: loaded, evidence: result.evidence };
     },
   },
@@ -139,13 +157,17 @@ export async function verify(harnessRoot: string, args: string[]): Promise<boole
 
   const selected = args.includes('--live') ? CHECKS : CHECKS.filter((c) => !live.includes(c));
   const workspace = mkdtempSync(join(tmpdir(), 'atrix-verify-'));
+  // A scratch directory *inside* the workspace, for the checks whose subject is content
+  // that only reaches an agent working there. Under projects/, because that is where the
+  // work happens and where the path was found broken.
+  const inside = mkdtempSync(join(harnessRoot, 'projects', '.verify-'));
 
   let failed = 0;
   try {
     for (const check of selected) {
       // Skills live in a sibling plugin, so that probe needs both loaded.
       const dir = check.name.includes('discoverable') ? skillsDir : pluginDir;
-      const result = await check.run(dir, workspace);
+      const result = await check.run(dir, check.inWorkspace === true ? inside : workspace);
 
       if (result.passed) {
         log.ok(`${check.name} ${dim(`— ${result.evidence}`)}`);
@@ -158,6 +180,7 @@ export async function verify(harnessRoot: string, args: string[]): Promise<boole
     }
   } finally {
     rmSync(workspace, { recursive: true, force: true });
+    rmSync(inside, { recursive: true, force: true });
   }
 
   log.blank();

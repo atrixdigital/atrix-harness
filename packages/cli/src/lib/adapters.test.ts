@@ -184,3 +184,27 @@ describe('hygiene', () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe('the workspace CLAUDE.md carries the rules', () => {
+  /**
+   * The delivery path for Claude Code. Rules cannot ride the SessionStart hook — Claude
+   * Code inlines only a ~2KB preview past ~10,000 characters — and cannot be `@`-imported,
+   * because an import resolves against the agent's working directory and so evaluates to
+   * nothing from `projects/*`. Inlining into CLAUDE.md is the only form that survives both.
+   *
+   * See learning/incidents/incident-0007.
+   */
+  test('inlines every rule, not a pointer to them', () => {
+    const claudeMd = readFileSync(join(root, 'CLAUDE.md'), 'utf8');
+    const bundle = readFileSync(join(paths.adapters, 'codex', 'AGENTS.md'), 'utf8');
+    for (const heading of bundle.match(/^## [a-z-]+$/gm) ?? []) {
+      expect(claudeMd).toContain(heading);
+    }
+  });
+
+  test('does not rely on an @ import', () => {
+    const claudeMd = readFileSync(join(root, 'CLAUDE.md'), 'utf8');
+    // `@path` resolves against cwd, so it silently yields nothing from a subdirectory.
+    expect(claudeMd).not.toMatch(/^@\S+/m);
+  });
+});

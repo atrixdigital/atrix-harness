@@ -2,9 +2,11 @@
 name: creating-a-deck
 description: >
   Build a presentation deck — investor pitch, client proposal, internal review — with the
-  slide arc the audience expects, one idea per slide, and an HTML-to-PDF pipeline that
-  produces something presentable. Use when asked to create, write or export a deck, pitch,
-  slides or a presentation.
+  slide arc the audience expects, one idea per slide, the Atrix house style, and an
+  HTML-to-PDF pipeline that produces something presentable. Use when asked to create,
+  write, build or export a deck, pitch, slide deck, slides or a presentation, including
+  "turn this into slides" or "make a deck out of it". Use this rather than hand-writing
+  slide HTML — the template in assets/ is already on brand.
 group: documents
 ---
 

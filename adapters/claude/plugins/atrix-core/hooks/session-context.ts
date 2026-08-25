@@ -1,15 +1,19 @@
 #!/usr/bin/env bun
 /**
- * SessionStart context, and the rule bundle.
+ * SessionStart context — situational notes only.
  *
- * Claude Code plugins ship skills, agents, hooks and MCP servers — **not rule files**.
- * The bundle this repo generates into the plugin was never loaded by anything: a live
- * session asked for the bounded-recovery levels and answered "NOT LOADED", while Codex
- * and Gemini, which read the bundle file directly, had every rule.
+ * **The rule bundle does not go here.** Claude Code inlines only the first ~2KB of a hook
+ * payload once the payload passes roughly 10,000 characters, and says so nowhere the
+ * agent or the developer can see. The bundle is ~38KB, so shipping it through this hook
+ * delivered the 60-line manual head and silently dropped all 19 rules *and* the notes
+ * below them. Measured: content at char 3,400 absent, char 3,258 present.
  *
- * `additionalContext` is the mechanism that closes it. The rules ride the same payload as
- * the situational notes below, so a Claude session pays the same always-on cost for the
- * same content as every other agent — which is what "org-wide rules" has to mean.
+ * Rules reach Claude through a `@` import in the workspace `CLAUDE.md`, which is the
+ * native mechanism for always-on content and has no such cap. Codex and Gemini read the
+ * generated bundle file directly. See `learning/incidents/incident-0007`.
+ *
+ * Keep this payload small. Everything here is subject to the same cap, so a note that
+ * matters can be evicted by one that does not.
  *
  * Harness-Bench's first recommendation for harness designers is **execution legibility**:
  * make pending obligations, observed evidence and recoverable failures explicit rather
@@ -30,30 +34,6 @@ import { dirname, join } from 'node:path';
 import { clusterFailures, describeCluster, readTrace } from './lib/trace.ts';
 
 const INDEX_STALE_HOURS = 24;
-
-/**
- * The generated bundle, shipped beside this hook inside the plugin.
- *
- * Passed as argv rather than read from the environment: `${CLAUDE_PLUGIN_ROOT}` is
- * expanded by the runtime when it builds the command, which is a guarantee, where the
- * variable surviving into the child process is an assumption.
- */
-function ruleBundle(): string | undefined {
-  const pluginRoot = process.argv[2];
-  if (pluginRoot === undefined || pluginRoot === '') return undefined;
-
-  const path = join(pluginRoot, 'AGENTS.md');
-  if (!existsSync(path)) return undefined;
-
-  try {
-    const text = readFileSync(path, 'utf8').trim();
-    return text === '' ? undefined : text;
-  } catch {
-    // A session without the rules is degraded but workable; one that fails to start
-    // is not. Never let this be the thing that breaks a session.
-    return undefined;
-  }
-}
 
 function findUp(marker: string, from: string): string | undefined {
   let dir = from;
@@ -174,14 +154,10 @@ if (existsSync(dbPath)) {
   }
 }
 
-const bundle = ruleBundle();
-
-// Rules first, situational notes after. The bundle is byte-identical between sessions,
-// so it sits in the cacheable prefix; the notes vary per session and belong below it.
-// See core/rules/cache-shape.md — ordering this the other way costs a full uncached
-// prefix on every turn.
+// The notes vary per session, so by cache-shape they belong at the end of the prompt —
+// which is exactly where a SessionStart payload lands. The stable rules sit above them,
+// delivered by the workspace CLAUDE.md import.
 const sections: string[] = [];
-if (bundle !== undefined) sections.push(bundle);
 if (notes.length > 0) {
   sections.push(`## Right now\n\nThings worth knowing before you start:\n${notes.map((n) => `- ${n}`).join('\n')}`);
 }

@@ -1,11 +1,14 @@
 ---
 name: producing-a-document
 description: >
-  Write and produce an Atrix document — audit, technical brief, system design,
-  proposal, status report or spec — with the right structure for its type, the house
-  visual style, and a PDF that actually renders. Use when asked to write, produce or
-  export a report, audit, brief, proposal, overview, spec or any client-facing or
-  internal document, or to turn findings and analysis into something someone will read.
+  Write and produce an Atrix document — audit, technical brief, system design, proposal,
+  status report, guide or spec — with the right structure for its type, the Atrix house
+  visual style, and a PDF that actually renders. Use whenever a PDF or a written document
+  is asked for: "make a PDF", "create a PDF", "export this as a PDF", "write it up",
+  "send them a report", or any request to produce a report, audit, brief, proposal,
+  overview, guide, spec or client-facing document, or to turn findings and analysis into
+  something someone will read. Use this rather than hand-writing HTML or CSS for a
+  document — the template in assets/ is already on brand.
 group: documents
 ---
 

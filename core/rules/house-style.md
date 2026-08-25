@@ -1,0 +1,52 @@
+---
+name: house-style
+description: Anything rendered for a human — PDF, deck, page — uses the Atrix house style. Never invent a design, never infer one from a nearby file.
+source: incident-0006
+applies: [**]
+---
+
+## Every rendered artifact uses the house style
+
+The moment work leaves the terminal and becomes something a person looks at — a PDF, a deck, a
+report, a printable page — it carries the Atrix brand. Not a reasonable design. **The** design.
+
+Load the skill rather than styling by hand:
+
+| Asked for | Skill |
+|---|---|
+| report, audit, brief, proposal, spec, guide, "make a PDF" | `producing-a-document` |
+| deck, pitch, slides, presentation | `creating-a-deck` |
+
+Each ships a template in `assets/` that is already correct. **Start from it.** Writing fresh CSS
+for a document is how the house style drifts, one plausible variation at a time.
+
+## The brand, if you need it directly
+
+Source of truth is `projects/atrix.dev-v2/app/globals.css` — not any document you happen to find.
+
+- **Montserrat** 600–800 for headings, tracked `-.03em` at display size
+- **Poppins** 300 for body in print (400 reads heavy and grey), **JetBrains Mono** for code
+- The run: `#facc14` → `#f97415` → `#ec4699`, used for **rules and bars, never for small type**
+- `#af6612` for anything at label size — no brand hue passes contrast on white
+- Ink `#09090b`, muted `#52525b`, faint `#a1a1aa`, rule `#e4e4e7`, wash `#fafafa`
+
+## Rendering
+
+`--virtual-time-budget` is not optional. Without it Chrome prints before the webfonts arrive and
+substitutes silently — a wrong-looking document with no error anywhere.
+
+```
+chrome --headless --disable-gpu --no-pdf-header-footer \
+       --virtual-time-budget=15000 --print-to-pdf=out.pdf file://$PWD/doc.html
+```
+
+Then **verify the artifact, not the source**: `pdffonts out.pdf` must name Montserrat and Poppins,
+and you must render pages to PNG and look at them. Overflow, clipping and colour that survives on
+screen but breaks in print are invisible in the HTML and obvious at a glance.
+
+## Why this is a rule and not a preference
+
+A house style was once inferred from a client PDF that happened to be nearby. It produced a
+well-built document in the wrong typeface and the wrong colour, shipped under the Atrix name, and
+every structural check passed — fonts embedded, no overflow, clean tables. Nothing in a build can
+answer "is this ours". See `incident-0006`.

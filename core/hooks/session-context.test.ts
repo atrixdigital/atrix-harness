@@ -166,26 +166,29 @@ describe('the rule bundle reaches the model', () => {
     return (JSON.parse(out) as { hookSpecificOutput: { additionalContext: string } }).hookSpecificOutput.additionalContext;
   }
 
-  test('emits the bundle found beside it in the plugin', () => {
+  test('never emits the rule bundle', () => {
+    // The bundle used to ride this payload, and that is exactly why no rule reached the
+    // model: Claude Code inlines only a ~2KB preview once a hook payload passes ~10,000
+    // characters. A 38KB bundle here delivers the manual head and drops everything after
+    // it — including the notes below. Rules go in the workspace CLAUDE.md instead.
     const pluginRoot = join(workspace, 'plugin');
     mkdirSync(pluginRoot, { recursive: true });
     writeFileSync(join(pluginRoot, 'AGENTS.md'), '# Manual\n\n## bounded-recovery\n\nretry, patch, replan.\n');
 
     const context = runWithPlugin(pluginRoot);
-    expect(context).toContain('bounded-recovery');
-    expect(context).toContain('retry, patch, replan');
+    expect(context).not.toContain('bounded-recovery');
+    expect(context).not.toContain('retry, patch, replan');
   });
 
-  test('puts the rules before the per-session notes', () => {
-    // Rules are byte-identical between sessions and belong in the cacheable prefix;
-    // notes vary and must sit below. See core/rules/cache-shape.md.
+  test('stays well under the payload size that triggers truncation', () => {
+    // Measured empirically: a payload at 8,000 chars arrives whole, one at 10,000 is
+    // replaced by a ~2KB preview, with no error anywhere. Notes are the only thing left
+    // in here, so the headroom is large — this guards it staying that way.
     const pluginRoot = join(workspace, 'plugin');
     mkdirSync(pluginRoot, { recursive: true });
-    writeFileSync(join(pluginRoot, 'AGENTS.md'), '# Manual\n\nRULE CONTENT HERE\n');
     seedDb([{ kind: 'conflicting', name: 'DATABASE_URL' }]);
 
-    const context = runWithPlugin(pluginRoot);
-    expect(context.indexOf('RULE CONTENT HERE')).toBeLessThan(context.indexOf('DATABASE_URL'));
+    expect(runWithPlugin(pluginRoot).length).toBeLessThan(8_000);
   });
 
   test('still starts a session when the bundle is missing', () => {
