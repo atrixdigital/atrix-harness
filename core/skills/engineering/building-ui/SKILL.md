@@ -8,6 +8,17 @@ group: engineering
 
 Most UI bugs are not rendering bugs. They are states nobody triggered locally.
 
+## Decide the direction before you write code
+
+For anything new — a page, a section, a product surface — the direction comes first: palette, type
+pairing, layout concept, and the one signature element it will be remembered by. Load
+`frontend-design` and run its process. Without a direction, the output converges on the same
+centred hero, three rounded cards and Inter that every generated interface has, and no amount of
+later polish rescues it.
+
+Within an existing product, the direction already exists — match it. `layout-and-spacing` covers
+composition, `motion-and-interaction` covers movement, and `tailwind-theming` covers tokens.
+
 ## Find the existing component first
 
 Reach for the design system component before writing a new one. A bespoke button is a permanent
@@ -69,8 +80,10 @@ path. Typefaces and the type scale are in `typography-and-fonts`.
 
 ## Verify by using it
 
-Typecheck, then **render it and interact**. Click the primary action. Submit the form empty.
-Resize. A component that has only been read has not been reviewed.
+Typecheck, then **render it, screenshot it, and look at the images** — every breakpoint, both
+themes, every state. `verifying-ui-visually` has the loop and the critique checklist. Click the
+primary action. Submit the form empty. Tab to the end. A component that has only been read has not
+been reviewed.
 
 For anything non-trivial, hand it to the `evaluator` role — self-assessment of visual work is
 especially unreliable, because it looks finished before it is wired up.
