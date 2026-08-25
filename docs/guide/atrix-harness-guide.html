@@ -3,76 +3,219 @@
 <head>
 <meta charset="utf-8">
 <title>Atrix Harness — Developer Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  @page { size: A4; margin: 20mm 18mm 18mm 18mm;
-    @bottom-center { content: counter(page) " / " counter(pages); font-family: -apple-system, sans-serif; font-size: 8pt; color: #94a3b8; } }
-  @page :first { @bottom-center { content: ""; } }
+/* ─────────────────────────────────────────────────────────────
+   TOKENS — the whole design system. Change here, never inline.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  /* Palette, taken from the existing Atrix audits. Restraint is the point:
+     one accent, used for the eyebrow and nothing else on most pages. */
+  --ink:      #131b25;   /* headings, body */
+  --muted:    #545a61;   /* secondary prose, labels */
+  --faint:    #8b9199;   /* metadata, page numbers */
+  --accent:   #0655b7;   /* the one accent */
+  --rule:     #d8dde3;   /* hairlines */
+  --rule-str: #131b25;   /* the heavy rule under the cover block */
+  --wash:     #f6f8fa;   /* table headers, callout grounds */
+  --warn:     #b45309;
+  --warn-bg:  #fffbeb;
 
-  * { box-sizing: border-box; }
-  body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; font-size: 10pt; line-height: 1.55;
-         color: #1e293b; margin: 0; }
+  /* Type scale — major third (1.25) off an 11pt body. A consistent ratio is
+     what makes a layout feel composed rather than assembled. */
+  --t-body:    11pt;
+  --t-small:   9.5pt;
+  --t-micro:   7.6pt;   /* labels, letterspaced */
+  --t-h3:      11.5pt;
+  --t-h2:      14pt;
+  --t-h1:      17.5pt;
+  --t-title:   32pt;
 
-  .cover { height: 247mm; display: flex; flex-direction: column; justify-content: center; page-break-after: always; }
-  .cover .eyebrow { font-size: 9pt; letter-spacing: .18em; text-transform: uppercase; color: #64748b; margin-bottom: 14mm; }
-  .cover h1 { font-size: 34pt; line-height: 1.1; margin: 0 0 6mm; color: #0f172a; letter-spacing: -.02em; }
-  .cover .sub { font-size: 13pt; color: #475569; max-width: 130mm; line-height: 1.5; margin-bottom: 18mm; }
-  .cover .meta { font-size: 9pt; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 5mm; }
-  .cover .meta strong { color: #334155; font-weight: 600; }
+  /* Vertical rhythm. Everything is a multiple of the body leading, so blocks
+     land on a common baseline instead of drifting. */
+  --lead:      1.62;
+  --space:     4.2mm;
 
-  h1 { font-size: 19pt; color: #0f172a; margin: 0 0 4mm; letter-spacing: -.01em;
-       border-bottom: 2px solid #0f172a; padding-bottom: 2mm; page-break-after: avoid; }
-  h2 { font-size: 13pt; color: #0f172a; margin: 8mm 0 3mm; page-break-after: avoid; }
-  h3 { font-size: 10.5pt; color: #334155; margin: 6mm 0 2mm; page-break-after: avoid; }
-  p  { margin: 0 0 3mm; }
-  .section { page-break-before: always; }
-  .section > h1:first-child { margin-top: 0; }
+  --sans:  "IBM Plex Sans", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --serif: "IBM Plex Serif", Charter, Georgia, "Times New Roman", serif;
+  --mono:  "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
 
-  /* Ligatures OFF in code: the font renders `--` as an em-dash, so a copied
-     command becomes `atrix verify —live` and simply does not work. */
-  code, pre { font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; }
-  code { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 8.8pt;
-         background: #f1f5f9; padding: 1px 4px; border-radius: 3px; color: #0f172a; }
-  pre { background: #0f172a; color: #e2e8f0; padding: 4mm 5mm; border-radius: 5px; overflow-x: hidden;
-        font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 8.4pt; line-height: 1.5;
-        margin: 3mm 0 4mm; white-space: pre-wrap; word-wrap: break-word; page-break-inside: avoid; }
-  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
-  pre .c { color: #94a3b8; }
-  pre .g { color: #4ade80; font-weight: 600; }
+/* ── Page ───────────────────────────────────────────────────── */
+@page {
+  size: Letter;
+  /* Generous outer and bottom margins are most of what reads as premium. */
+  margin: 22mm 20mm 24mm 20mm;
+  @bottom-center {
+    content: counter(page);
+    font-family: var(--sans); font-size: var(--t-micro);
+    color: var(--faint); letter-spacing: .08em;
+  }
+}
+@page :first { @bottom-center { content: ""; } }
 
-  table { width: 100%; border-collapse: collapse; margin: 3mm 0 5mm; font-size: 9pt; page-break-inside: avoid; }
-  th { text-align: left; background: #f8fafc; color: #334155; font-weight: 600;
-       padding: 2.2mm 3mm; border-bottom: 1.5px solid #cbd5e1; }
-  td { padding: 2.2mm 3mm; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
-  tr:last-child td { border-bottom: none; }
+* { box-sizing: border-box; }
+body {
+  font-family: var(--serif);
+  font-size: var(--t-body);
+  line-height: var(--lead);
+  color: var(--ink);
+  margin: 0;
+  /* Measure: 45–75 characters. Full-width body text is the fastest way to look cheap. */
+  max-width: 168mm;
+  -webkit-font-smoothing: antialiased;
+}
 
-  ul, ol { margin: 0 0 3mm; padding-left: 6mm; }
-  li { margin-bottom: 1.5mm; }
+/* ── Cover ──────────────────────────────────────────────────── */
+.eyebrow {
+  font-family: var(--sans); font-size: var(--t-micro); font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 6mm;
+}
+.title {
+  font-family: var(--sans); font-size: var(--t-title); font-weight: 700;
+  line-height: 1.12; letter-spacing: -.015em;
+  color: var(--ink); margin: 0 0 5mm;
+}
+.lead {
+  font-size: 12.5pt; line-height: 1.55; color: var(--muted);
+  margin: 0 0 9mm; max-width: 158mm; text-wrap: pretty;
+}
 
-  .note { background: #f8fafc; border-left: 3px solid #64748b; padding: 3mm 4mm; margin: 4mm 0;
-          font-size: 9.2pt; page-break-inside: avoid; }
-  .warn { background: #fffbeb; border-left: 3px solid #f59e0b; padding: 3mm 4mm; margin: 4mm 0;
-          font-size: 9.2pt; page-break-inside: avoid; }
-  .note strong, .warn strong { color: #0f172a; }
+/* Metadata grid — prepared for, date and the exact version are what make a
+   document citable months later. Not decoration. */
+.meta {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 5mm 6mm; padding: 5mm 0;
+  border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+  margin-bottom: 9mm;
+}
+.meta dt {
+  font-family: var(--sans); font-size: var(--t-micro); font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--faint); margin-bottom: 1.5mm;
+}
+.meta dd { font-family: var(--sans); font-size: var(--t-small); margin: 0; color: var(--ink); }
+.chip {
+  font-family: var(--mono); font-size: 7.6pt;
+  background: var(--wash); padding: .6mm 1.4mm; border-radius: 2px; color: var(--muted);
+}
 
-  .toc { margin-top: 6mm; }
-  .toc div { padding: 2mm 0; border-bottom: 1px solid #f1f5f9; font-size: 10pt; }
-  .toc span { color: #94a3b8; display: inline-block; width: 8mm; }
+/* ── Headings ───────────────────────────────────────────────── */
+/* Section label + rule: the pattern the existing audits use. It gives a long
+   document navigable landmarks without a heavy heading on every page. */
+.section-label {
+  font-family: var(--sans); font-size: var(--t-micro); font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--ink);
+  padding-bottom: 2mm; border-bottom: 2px solid var(--rule-str);
+  margin: 12mm 0 5mm; page-break-after: avoid;
+}
+h1, h2, h3 { font-family: var(--sans); color: var(--ink); page-break-after: avoid; }
+h1 { font-size: var(--t-h1); font-weight: 700; letter-spacing: -.01em; margin: 10mm 0 3mm; }
+h2 { font-size: var(--t-h2); font-weight: 600; margin: 8mm 0 2.5mm; }
+h3 { font-size: var(--t-h3); font-weight: 600; color: var(--muted); margin: 6mm 0 2mm; }
+p  { margin: 0 0 var(--space); }
+p + p { margin-top: calc(var(--space) * -.25); }
 
-  .lead { font-size: 11pt; color: #475569; margin-bottom: 5mm; }
-  .kicker { font-size: 8.5pt; letter-spacing: .12em; text-transform: uppercase; color: #64748b; margin-bottom: 1mm; }
+/* First paragraph after a section label carries the weight of the section. */
+.section-label + p { font-size: 12pt; line-height: 1.58; }
+
+/* ── Findings: the house pattern ────────────────────────────── */
+/* Bold lead-in states the fact; the prose that follows gives the consequence
+   and why it matters. A bare bullet carries the same information and moves nobody. */
+ol.findings { counter-reset: f; list-style: none; padding: 0; margin: 0; }
+ol.findings > li {
+  counter-increment: f; position: relative;
+  padding-left: 9mm; margin-bottom: 5mm; page-break-inside: avoid;
+}
+ol.findings > li::before {
+  content: counter(f); position: absolute; left: 0; top: .4mm;
+  font-family: var(--sans); font-size: var(--t-small); font-weight: 600;
+  color: var(--accent);
+}
+ol.findings b, ol.findings strong { font-weight: 600; }
+
+ul, ol { margin: 0 0 var(--space); padding-left: 6mm; }
+li { margin-bottom: 1.8mm; }
+
+/* ── Tables ─────────────────────────────────────────────────── */
+table {
+  width: 100%; border-collapse: collapse; margin: 4mm 0 6mm;
+  font-family: var(--sans); font-size: var(--t-small);
+  page-break-inside: avoid;  /* a table split across pages is the commonest defect */
+}
+th {
+  text-align: left; background: var(--wash); color: var(--ink); font-weight: 600;
+  font-size: var(--t-micro); letter-spacing: .06em; text-transform: uppercase;
+  padding: 2.4mm 3mm; border-bottom: 1.5px solid var(--rule);
+}
+td { padding: 2.6mm 3mm; border-bottom: 1px solid var(--rule); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+
+/* ── Code ───────────────────────────────────────────────────── */
+code {
+  font-family: var(--mono); font-size: 9pt;
+  /* Tight horizontal padding with a compensating negative margin: without it the
+     chip pushes the following comma away and the sentence reads as spaced-out. */
+  background: var(--wash); padding: .3mm 1mm; margin: 0 -.2mm; border-radius: 2px;
+  /* Ligatures off: some faces render `--` as an em-dash, so a copied command breaks. */
+  font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0;
+}
+pre {
+  font-family: var(--mono); font-size: 8.6pt; line-height: 1.5;
+  background: var(--ink); color: #e6ebf1;
+  padding: 4mm 5mm; border-radius: 4px; margin: 3mm 0 5mm;
+  white-space: pre-wrap; word-wrap: break-word;   /* wrap, never clip */
+  font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0;
+  page-break-inside: avoid;
+}
+pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+pre .c { color: #8b9199; }
+
+/* ── Callouts — two kinds only. More and none of them register. ─ */
+.note, .warn {
+  padding: 3.4mm 4.5mm; margin: 4mm 0; font-size: var(--t-small);
+  page-break-inside: avoid; line-height: 1.55;
+}
+.note { background: var(--wash); border-left: 3px solid var(--muted); }
+.warn { background: var(--warn-bg); border-left: 3px solid var(--warn); }
+
+.pull {
+  font-size: 13pt; line-height: 1.5; color: var(--ink);
+  border-left: 3px solid var(--accent); padding-left: 5mm;
+  margin: 6mm 0; font-style: italic;
+}
+.page-break { page-break-before: always; }
+
+/* ── Guide-specific, layered on the house system ─────────────── */
+.cover { height: 218mm; display: flex; flex-direction: column; justify-content: center; page-break-after: always; }
+.cover .title { font-size: 38pt; }
+.cover .lead  { font-size: 13.5pt; max-width: 140mm; }
+.part { page-break-before: always; }
+.toc { margin-top: 8mm; }
+.toc a, .toc div { display: block; padding: 2.4mm 0; border-bottom: 1px solid var(--rule);
+                   font-family: var(--sans); font-size: var(--t-small); color: var(--ink); text-decoration: none; }
+.toc span { color: var(--accent); font-weight: 600; display: inline-block; width: 9mm; }
+.kicker { font-family: var(--sans); font-size: var(--t-micro); font-weight: 600;
+          letter-spacing: .14em; text-transform: uppercase; color: var(--faint); margin-bottom: 1mm; }
 </style>
 </head>
 <body>
 
 <div class="cover">
   <div class="eyebrow">Atrix Digital · Engineering</div>
-  <h1>The Atrix Harness</h1>
-  <div class="sub">A complete guide for developers — what it is, how to set it up, and how to work with it day to day.</div>
-  <div class="meta">
-    <strong>Repository</strong> &nbsp; github.com/atrixdigital/atrix-harness<br>
-    <strong>Audience</strong> &nbsp; Every engineer at Atrix<br>
-    <strong>Time to set up</strong> &nbsp; About ten minutes
-  </div>
+  <h1 class="title">The Atrix Harness</h1>
+  <p class="lead">A complete guide for developers — what it is, how to set it up, and how to
+  work with it day to day.</p>
+
+  <dl class="meta">
+    <div><dt>Repository</dt><dd>github.com/atrixdigital/<wbr>atrix-harness</dd></div>
+    <div><dt>Audience</dt><dd>Every engineer at Atrix</dd></div>
+    <div><dt>Set-up time</dt><dd>About ten minutes</dd></div>
+    <div><dt>Version</dt><dd>Living document</dd></div>
+  </dl>
 </div>
 
 <h1>What this is</h1>
@@ -99,8 +242,8 @@
   <div><span>8</span> When something looks wrong</div>
 </div>
 
-<div class="section">
-<h1>1 · Setting up</h1>
+<div class="part">
+<div class="section-label">1 · Setting up</div>
 <p class="lead">Ten minutes, once.</p>
 
 <h2>Clone the harness</h2>
@@ -142,8 +285,8 @@ alias atrix="bun run $ATRIX_HOME/packages/cli/src/index.ts"</code></pre>
 <div class="note">These launch real sessions and ask questions only answerable if each path works. They exist because every offline check we had was green at a time when the rules reached no Claude session at all. Structure passing is not the same as the model seeing it.</div>
 </div>
 
-<div class="section">
-<h1>2 · Bringing a project in</h1>
+<div class="part">
+<div class="section-label">2 · Bringing a project in</div>
 <p class="lead">Clone it, then ask your agent. That is the whole procedure.</p>
 
 <pre><code>git clone git@github.com:atrixdigital/playo-web.git projects/playo-web</code></pre>
@@ -178,8 +321,8 @@ alias atrix="bun run $ATRIX_HOME/packages/cli/src/index.ts"</code></pre>
     └── ezrov/          <span class="c">its own git remote</span></code></pre>
 </div>
 
-<div class="section">
-<h1>3 · What happens without you doing anything</h1>
+<div class="part">
+<div class="section-label">3 · What happens without you doing anything</div>
 
 <h2>At session start</h2>
 <p>A hook speaks only when something changes what you would do. Most sessions it says nothing. When it does:</p>
@@ -207,8 +350,8 @@ call 9 → asks you</code></pre>
 <div class="note">Both <strong>ask</strong>; neither blocks silently. A guard that stops legitimate work gets switched off, and then it catches nothing.</div>
 </div>
 
-<div class="section">
-<h1>4 · The tools you get</h1>
+<div class="part">
+<div class="section-label">4 · The tools you get</div>
 <p class="lead">Seven tools your agent can call, so it stops reading twenty files to answer one question.</p>
 
 <table>
@@ -244,8 +387,8 @@ atrix index --all          <span class="c"># the whole workspace</span></code></
 <p>Roughly a second for a small project, ten for a thousand files. The index is yours and gitignored; nothing leaves your machine.</p>
 </div>
 
-<div class="section">
-<h1>5 · When something costs you time</h1>
+<div class="part">
+<div class="section-label">5 · When something costs you time</div>
 <p class="lead">This is the part that makes the system get better instead of going stale.</p>
 
 <pre><code>/learn                              <span class="c"># capture what bit you</span>
@@ -271,8 +414,8 @@ atrix sync                          <span class="c"># everyone else gets it</spa
 <p>Dead ends count. A confirmed dead end is worth as much as a discovery, and it is lost completely if unwritten.</p>
 </div>
 
-<div class="section">
-<h1>6 · Working with several people</h1>
+<div class="part">
+<div class="section-label">6 · Working with several people</div>
 
 <table>
   <tr><th>Shared &amp; committed</th><th>Yours &amp; gitignored</th></tr>
@@ -303,8 +446,8 @@ atrix sync                          <span class="c"># everyone else gets it</spa
 <div class="note"><strong>Rule or skill?</strong> Rules load every session forever; skills load when relevant. Measured on this repo: one rule cost <strong>625 tokens in every session</strong>. Three skills of substantially more content cost <strong>zero</strong>. If it does not apply to every task, it is a skill.</div>
 </div>
 
-<div class="section">
-<h1>7 · Command reference</h1>
+<div class="part">
+<div class="section-label">7 · Command reference</div>
 
 <table>
   <tr><th>Command</th><th>What it does</th></tr>
@@ -325,8 +468,8 @@ atrix sync                          <span class="c"># everyone else gets it</spa
 </table>
 </div>
 
-<div class="section">
-<h1>8 · When something looks wrong</h1>
+<div class="part">
+<div class="section-label">8 · When something looks wrong</div>
 
 <table>
   <tr><th>Symptom</th><th>Cause and fix</th></tr>
