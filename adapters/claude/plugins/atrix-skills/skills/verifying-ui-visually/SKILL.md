@@ -31,9 +31,10 @@ Two passes minimum. The first catches the broken thing; the second catches what 
 
 ## What to capture
 
-**Breakpoints — 375, 768, 1280, 1920.** 375 is the one that fails, and it is the one most often
-skipped. Nothing may scroll horizontally at any width; wide content (tables, code, diagrams)
-scrolls inside its own container, not the page.
+**Breakpoints — 375, 768, 1280, 1920, and ultra-wide at 50% zoom.** 375 is the one that fails and
+the one most often skipped; ultra-wide-at-50% is how a 1440-wide design actually fails on a 34"
+monitor, and no standard breakpoint reveals it. Nothing may scroll horizontally at any width; wide
+content (tables, code, diagrams) scrolls inside its own container, not the page.
 
 **Themes — light, dark, and system.** System is the default and stamps no attribute, so it is a
 third case, not a synonym for light.
@@ -49,6 +50,8 @@ third case, not a synonym for light.
 | Short content | One item. Does the grid collapse into something strange? |
 | Focus | Tab through it. Is the focus ring visible on **every** background? |
 | Disabled / read-only | Still legible, or greyed into invisibility? |
+| Sparse | Three items where the design assumed thirty |
+| Dense | Thirty where it assumed three — does anything overlap or truncate badly? |
 
 The empty and error states are where design effort is skipped and where users end up.
 

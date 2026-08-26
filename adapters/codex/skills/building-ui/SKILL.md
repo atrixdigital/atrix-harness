@@ -19,6 +19,14 @@ later polish rescues it.
 Within an existing product, the direction already exists — match it. `layout-and-spacing` covers
 composition, `motion-and-interaction` covers movement, and `tailwind-theming` covers tokens.
 
+**[references/design-styles.md](references/design-styles.md)** is the catalogue of surface
+treatments — glassmorphism, Liquid Glass, neumorphism, Material 3, neo-brutalism, bento, clay,
+aurora, kinetic type — with how to build each and what each costs. Two carry real accessibility
+debt (neumorphism removes contrast by design and fails the 3:1 floor for non-text controls;
+glass inherits whatever is behind it, so it can pass contrast on one screen and fail on the next),
+and glass-on-everything is a current AI tell. **Pick one and commit** — a page wearing three is the
+failure mode.
+
 ## Find the existing component first
 
 Reach for the design system component before writing a new one. A bespoke button is a permanent
@@ -26,6 +34,24 @@ inconsistency, and the third one makes the codebase unmaintainable.
 
 Match the nearest sibling: spacing scale, token usage, loading convention, error convention, form
 patterns, file layout.
+
+## The quality bar
+
+**[references/interface-quality-bar.md](references/interface-quality-bar.md)** is the floor every
+interface clears — targets, forms, feedback, semantics, performance. It is a subset of
+[vercel-labs/web-interface-guidelines](https://github.com/vercel-labs/web-interface-guidelines),
+which is maintained upstream and worth reading fresh rather than trusting a local copy.
+
+Four that this team keeps getting wrong:
+
+- **Hit targets ≥ 24px, ≥ 44px on touch.** Expand the hit area, do not grow the icon.
+- **Never `<div onClick>`.** `<a>` navigates, `<button>` acts. The element type is what gives you
+  middle-click, keyboard activation, focus order and the right announcement — all of which get
+  rebuilt by hand, badly, on a div.
+- **Filters, tabs, pagination and open panels live in the URL.** If you cannot link someone to what
+  you are looking at, the state is in the wrong layer.
+- **Confirm destructive actions, or offer Undo.** Undo is better: a confirmation dialog taxes every
+  correct action to catch a rare wrong one.
 
 ## Every state, before you call it done
 

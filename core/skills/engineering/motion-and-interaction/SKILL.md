@@ -69,6 +69,11 @@ distinguishable from each other, not one shared style.
 Reserve motion for state that actually changed. Animating a value that reloaded to the same number
 is noise.
 
+**Every animation is interruptible.** If a menu must finish opening before it can close, or a
+transition swallows the click that arrives mid-flight, the interface feels slow however short the
+duration is. Animate toward a target that can change; never queue a sequence the user has to wait
+out.
+
 ## Entrances, and the over-animation trap
 
 A staggered reveal of a few elements (~50ms apart) reads as considered. The same effect applied to

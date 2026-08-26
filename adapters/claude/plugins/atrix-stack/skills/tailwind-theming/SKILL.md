@@ -122,6 +122,31 @@ someone clicks the toggle is broken for most visitors.
 Set `suppressHydrationWarning` on `<html>`. Without it, the server renders one theme and the client
 corrects it, and React logs a mismatch on every page.
 
+**Set `color-scheme` too.** Tokens do not reach native UI: form controls, scrollbars, autofill
+backgrounds and date pickers stay light on a dark page until you declare it.
+
+```css
+:root                    { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+```
+
+Pair it with `<meta name="theme-color">` per theme so the browser chrome matches. Missing
+`color-scheme` looks like a CSS bug and is not — it is the one part of theming CSS variables
+cannot reach.
+
+## Repeated classes are a component, not a snippet
+
+Past roughly ten or twelve utilities on one element, or the second time the same string appears,
+extract a component. A copied class string is a style with no single place to change it.
+
+**Do not reach for `@apply`.** Tailwind v4's own guidance moved away from it for component styles:
+it hides which utilities are in play, breaks editor tooling, and reintroduces the specificity
+problems utilities existed to remove. Keep it for global base styles and for overriding
+third-party CSS you do not control — a real component is the answer everywhere else.
+
+For variants — size, tone, state — use `cva` or `tailwind-variants` rather than template-literal
+class concatenation, which is where the conditional-class bugs live.
+
 ## Colour that stays legible
 
 Use **oklch**, not hex. Lightness is perceptual, so `oklch(0.7 …)` reads as the same weight across
