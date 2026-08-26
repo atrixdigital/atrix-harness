@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve as resolvePath, sep } from 'node:path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
@@ -31,7 +31,27 @@ import { renderAmbiguous, renderCallees, renderCallers, renderContext, renderImp
  */
 
 const projectRoot = process.env.ATRIX_PROJECT_ROOT ?? process.cwd();
-const dbPath = join(projectRoot, '.atrix', 'graph.db');
+
+/**
+ * The workspace holds ONE index; a project directory sits underneath it. So walk up for
+ * it rather than assuming the graph is in the working directory.
+ *
+ * Reading it from cwd meant that any agent working in `projects/<name>` — which is where
+ * all real work happens — got "No code graph" for every query, while the index sat one
+ * level up, populated. See learning/incidents/incident-0009.
+ */
+function findWorkspace(from: string): string {
+  let dir = resolvePath(from);
+  for (;;) {
+    if (existsSync(join(dir, '.atrix', 'graph.db'))) return dir;
+    const parent = dirname(dir);
+    if (parent === dir) return resolvePath(from); // report against cwd when there is no index anywhere
+    dir = parent;
+  }
+}
+
+const workspaceRoot = findWorkspace(projectRoot);
+const dbPath = join(workspaceRoot, '.atrix', 'graph.db');
 
 /**
  * Default scope for symbol queries.
@@ -39,10 +59,17 @@ const dbPath = join(projectRoot, '.atrix', 'graph.db');
  * A workspace holds many independent repos. Answering a playo-web question with an ezrov
  * symbol is technically a match and practically wrong, so searches scope to the active
  * project unless the caller asks for the whole workspace.
+ *
+ * Derived from where the agent is standing, because the env var this used to require was
+ * never set by anything — so every query silently ran unscoped.
  */
 const activeProject = (): string | undefined => {
   const named = process.env.ATRIX_PROJECT;
-  return named !== undefined && named !== '' ? named : undefined;
+  if (named !== undefined && named !== '') return named;
+
+  const rel = relative(join(workspaceRoot, 'projects'), projectRoot);
+  if (rel === '' || rel.startsWith('..') || isAbsolute(rel)) return undefined;
+  return rel.split(sep)[0];
 };
 
 const text = (body: string) => ({ content: [{ type: 'text' as const, text: body }] });

@@ -100,18 +100,15 @@ describe('hooks', () => {
 });
 
 describe('mcp', () => {
-  test('server config is valid and parameterised, never machine-specific', () => {
+  test('server config is parameterised on the plugin root, never machine-specific', () => {
+    // These two assertions used to require ${ATRIX_HOME}, which encoded the bug: the
+    // variable was set on no machine, so the server never started. The runtime always
+    // expands ${CLAUDE_PLUGIN_ROOT}, which is a guarantee rather than an assumption.
     const config = readJson(join(claude, 'plugins', 'atrix-graphs', '.mcp.json'));
     const server = config['atrix-graph'] as { command: string; args: string[] };
     expect(server.command).toBe('bun');
-    expect(server.args.join(' ')).toContain('${ATRIX_HOME}');
+    expect(server.args.join(' ')).toContain('${CLAUDE_PLUGIN_ROOT}');
     expect(server.args.join(' ')).not.toMatch(/\/(Users|home)\//);
-  });
-
-  test('the server entrypoint exists in this checkout', () => {
-    const config = readJson(join(claude, 'plugins', 'atrix-graphs', '.mcp.json'));
-    const arg = (config['atrix-graph'] as { args: string[] }).args.at(-1) as string;
-    expect(existsSync(join(root, arg.replace('${ATRIX_HOME}/', '')))).toBe(true);
   });
 });
 
@@ -206,5 +203,31 @@ describe('the workspace CLAUDE.md carries the rules', () => {
     const claudeMd = readFileSync(join(root, 'CLAUDE.md'), 'utf8');
     // `@path` resolves against cwd, so it silently yields nothing from a subdirectory.
     expect(claudeMd).not.toMatch(/^@\S+/m);
+  });
+});
+
+describe('the graph MCP server is reachable', () => {
+  /**
+   * The config named a path that did not exist on any machine that had not exported
+   * ATRIX_HOME — which was every machine, because `atrix init` only printed the export
+   * as a suggestion. bun failed to resolve the module before our code ran, so the agent
+   * had seven fewer tools and no error anywhere. See learning/incidents/incident-0009.
+   */
+  test('every path in the config exists inside the plugin', () => {
+    const dir = join(claude, 'plugins', 'atrix-graphs');
+    const config = readJson(join(dir, '.mcp.json'));
+    const server = config['atrix-graph'] as { args: string[] };
+
+    for (const arg of server.args) {
+      if (!arg.includes('/')) continue;
+      // ${CLAUDE_PLUGIN_ROOT} is expanded by the runtime to this directory.
+      const resolved = arg.replace('${CLAUDE_PLUGIN_ROOT}', dir);
+      expect(existsSync(resolved)).toBe(true);
+    }
+  });
+
+  test('the config does not depend on an environment variable nobody sets', () => {
+    const config = readJson(join(claude, 'plugins', 'atrix-graphs', '.mcp.json'));
+    expect(JSON.stringify(config)).not.toContain('ATRIX_HOME');
   });
 });

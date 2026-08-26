@@ -38,11 +38,19 @@ describe('workspace mode', () => {
     expect(readJson('.mcp.json')['mcpServers']['atrix-graph']).toBeDefined();
   });
 
-  test('parameterises the server path instead of baking in this machine', () => {
+  test('points at a launcher that exists, with no environment variable to forget', () => {
+    // This asserted ${ATRIX_HOME} and so encoded the bug: nothing set the variable, the
+    // path resolved to /packages/... and the server never started. `.mcp.json` is local
+    // and gitignored, so an absolute path is both correct and the most robust form here.
+    // See learning/incidents/incident-0009.
+    // A workspace IS a harness clone, so the fixture carries the launcher too.
+    mkdirSync(join(workspace, 'core', 'mcp'), { recursive: true });
+    writeFileSync(join(workspace, 'core', 'mcp', 'launch.ts'), '// launcher', 'utf8');
+
     init(workspace, workspace);
     const args: string[] = readJson('.mcp.json')['mcpServers']['atrix-graph'].args;
-    expect(args.join(' ')).toContain('${ATRIX_HOME}');
-    expect(args.join(' ')).not.toMatch(/\/(Users|home)\//);
+    expect(args.join(' ')).not.toContain('ATRIX_HOME');
+    expect(existsSync(args.at(-1) as string)).toBe(true);
   });
 
   test('records the harness commit so drift can be reported later', () => {

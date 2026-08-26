@@ -122,7 +122,13 @@ function mcpConfig(): string {
       'atrix-graph': {
         type: 'stdio',
         command: 'bun',
-        args: ['run', '${ATRIX_HOME}/packages/graph-mcp/src/server.ts'],
+        // The launcher, not the server. It resolves the harness from $ATRIX_HOME, then
+        // the working directory, then its own location — and prints what to do when it
+        // cannot. Pointing straight at ${ATRIX_HOME}/packages/... meant that with the
+        // variable unset (the default) bun failed with "Module not found" before any of
+        // our code ran, and the agent simply had no graph tools and no error.
+        // See learning/incidents/incident-0009.
+        args: ['run', '${CLAUDE_PLUGIN_ROOT}/launch.ts'],
       },
     },
     null,
@@ -192,7 +198,10 @@ function buildClaude(harnessRoot: string, core: CoreSet, agentsMd: string): numb
   const commandsSrc = join(harnessRoot, 'core', 'commands');
   if (existsSync(commandsSrc)) cpSync(commandsSrc, join(coreDir, 'commands'), { recursive: true });
 
-  write(join(out, 'plugins', 'atrix-graphs', '.mcp.json'), mcpConfig());
+  const graphsDir = join(out, 'plugins', 'atrix-graphs');
+  write(join(graphsDir, '.mcp.json'), mcpConfig());
+  // The launcher ships beside the config it is named in.
+  cpSync(join(harnessRoot, 'core', 'mcp', 'launch.ts'), join(graphsDir, 'launch.ts'));
 
   for (const role of core.roles) {
     const fm: string[] = [`name: ${role.meta.name}`, `description: ${role.meta.description}`];

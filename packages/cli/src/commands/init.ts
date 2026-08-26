@@ -27,10 +27,20 @@ const ATRIX_MCP_KEY = 'atrix-graph';
 /** Merge our server into whatever the repo already has, without touching the rest. */
 function wireMcp(workspaceRoot: string, created: string[], skipped: string[]): void {
   const file = join(workspaceRoot, '.mcp.json');
+  // `.mcp.json` is local and gitignored, so an absolute path is correct here and is the
+  // most robust form — no environment variable to forget. (incident-0003 was about paths
+  // baked into COMMITTED adapters, which is a different thing.)
+  const launcher = join(workspaceRoot, 'core', 'mcp', 'launch.ts');
+  if (!existsSync(launcher)) {
+    // Pointing a config at a path that is not there is how the graph was broken for
+    // everyone once already; say so rather than writing it silently.
+    log.warn(`graph launcher not found at ${launcher} — the graph tools will not start`);
+  }
+
   const server = {
     type: 'stdio',
     command: 'bun',
-    args: ['run', '${ATRIX_HOME}/packages/graph-mcp/src/server.ts'],
+    args: ['run', launcher],
   };
 
   if (!existsSync(file)) {
@@ -205,8 +215,11 @@ function initWorkspace(workspaceRoot: string): void {
 
   log.blank();
   log.info('Next:');
-  log.detail(`1. export ATRIX_HOME="${workspaceRoot}"   (the MCP server resolves it at launch)`);
-  log.detail('2. git clone <repo> projects/<name>     — bring a project in');
-  log.detail('3. cd projects/<name> && atrix init     — scaffold that project');
-  log.detail('4. atrix index --all                    — one index across the workspace');
+  log.detail('1. git clone <repo> projects/<name>     — bring a project in');
+  log.detail('2. cd projects/<name> && atrix init     — scaffold that project');
+  log.detail('3. atrix index --all                    — one index across the workspace');
+  log.blank();
+  // The old step 1 here was "export ATRIX_HOME=…", which nobody did, and the graph then
+  // silently had no tools. Discovery replaced it. See learning/incidents/incident-0009.
+  log.detail('No ATRIX_HOME to export — the graph server finds the workspace itself.');
 }

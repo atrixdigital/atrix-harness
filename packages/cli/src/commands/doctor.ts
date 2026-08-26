@@ -125,6 +125,45 @@ export function doctor(harnessRoot: string, projectRoot: string): boolean {
   }
   checks.push({ name: 'code graph indexed', ok: indexed, detail: indexDetail });
 
+  // — The graph tools ANSWER. Every check above this line passed for months while the
+  //   MCP server failed to start at all: the config pointed at
+  //   ${ATRIX_HOME}/packages/... and nothing set ATRIX_HOME, so bun could not resolve
+  //   the module and the agent silently had no tools. "The index exists" and "a query
+  //   returns a result" are different questions. See learning/incidents/incident-0009.
+  {
+    const launcher = join(harnessRoot, 'core', 'mcp', 'launch.ts');
+    const request = [
+      JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'doctor', version: '1' } },
+      }),
+      JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list' }),
+      '',
+    ].join('\n');
+
+    const proc = Bun.spawnSync(['bun', 'run', launcher], {
+      cwd: projectRoot,
+      stdin: new TextEncoder().encode(request),
+      stdout: 'pipe',
+      stderr: 'pipe',
+      // Deliberately WITHOUT ATRIX_HOME: the point is that it works without one.
+      env: Object.fromEntries(Object.entries(process.env).filter(([k]) => k !== 'ATRIX_HOME')) as Record<string, string>,
+    });
+
+    const out = proc.stdout.toString();
+    const names = [...out.matchAll(/"name":"(atrix_[a-z_]+)"/g)].map((m) => m[1]);
+    const ok = names.length >= 5;
+    checks.push({
+      name: 'graph tools respond',
+      ok,
+      detail: ok
+        ? `${names.length} tools over MCP, no ATRIX_HOME needed`
+        : `server did not list tools — ${proc.stderr.toString().split('\n')[0] || 'no output'}`,
+    });
+  }
+
   for (const check of checks) {
     if (check.ok) log.ok(`${check.name}${check.detail ? ` ${'— ' + check.detail}` : ''}`);
     else log.fail(`${check.name}${check.detail ? ` — ${check.detail}` : ''}`);
