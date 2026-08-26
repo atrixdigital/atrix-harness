@@ -64,6 +64,27 @@ navigate → set viewport → screenshot → set data-theme=dark → screenshot
 For a full page, capture full-height rather than the fold. For a component, capture the component's
 bounding box so detail survives at a readable resolution.
 
+### The instrument lies more often than the page does
+
+Three traps, all measured, all of which produce a screenshot that looks like a real bug:
+
+- **Headless Chrome reports `prefers-color-scheme: dark`.** Shoot what you think is the light theme
+  and you get the dark one. Stamp the theme explicitly — `<html data-theme="light">` — for every
+  shot, and never trust an unstamped render to be light.
+- **macOS Chrome will not open a window narrower than ~500px.** `--window-size=375` silently
+  renders at 500 and crops the image to 375, which looks exactly like horizontal overflow. Use
+  Playwright's device emulation, or render the page inside a `375px` iframe — an iframe gets its own
+  viewport for media queries.
+- **`--force-dark-mode` is Chrome's auto-darkener**, not `prefers-color-scheme`. It fakes a dark
+  theme that is not yours.
+
+Before believing a layout bug you see in a screenshot, **measure it**:
+`document.documentElement.scrollWidth` vs `clientWidth` settles an overflow question in one line,
+and identical file sizes across two supposedly different renders means neither one changed.
+
+This is the same discipline as `testing-policy`: the verification harness is code, and it can be
+the broken thing.
+
 **Resolution matters more than it sounds.** A low-resolution screenshot makes `--` look like an
 em-dash, hides a 1px misalignment, and makes bad kerning look fine. Shoot at 2× when judging
 typography or spacing.

@@ -2,9 +2,11 @@
 name: motion-and-interaction
 description: >
   Add motion that makes an interface feel responsive rather than decorated — durations,
-  easing, what to animate, orchestrated entrances, and reduced-motion support. Use when
-  adding animation or transitions, building hover and press states, a modal, drawer, toast
-  or page transition, or when an interface feels sluggish, janky or over-animated.
+  easing, what to animate, scroll choreography, 3D depth and reduced-motion support. Use
+  when adding animation or transitions, building hover and press states, a modal, drawer,
+  toast or page transition, when building a landing or launch page with scroll-driven
+  motion, parallax, pinned sections, smooth scrolling or a 3D tilt card, or when an
+  interface feels sluggish, janky or over-animated.
 group: engineering
 ---
 
@@ -81,6 +83,35 @@ Rules that keep it on the right side:
 
 If you cannot say what a given animation explains, delete it.
 
+## Depth and scroll choreography
+
+A persuasion page — a launch, a product story, an owner-acquisition page — can carry far more
+motion than a product screen, and the techniques are different in kind: momentum scrolling, a
+pinned stage that content cycles through, a card that tilts in real 3D under the cursor.
+
+**[references/scroll-choreography.md](references/scroll-choreography.md)** has the full recipes,
+taken from the Pakistan Pass page in `digitalpakistan/dpak` — read
+`src/components/landing/pass-*.tsx` before building a new one.
+
+The five rules that decide whether it reads as crafted or as effects:
+
+1. **Perspective goes on the parent**, never on the element being transformed. The most common
+   mistake, and it looks subtly wrong rather than obviously broken.
+2. **Depth needs layers.** A card that tilts while its contents stay flush reads as a photo being
+   tilted. Lift the inner elements onto their own Z planes (`translateZ`, 0–80px, with
+   `preserve-3d` on every one) and the same rotation reads as an object with thickness.
+3. **Progress-driven, not time-driven.** Derive from `scrollYProgress` so it scrubs both ways.
+   Animation that *plays* at a threshold cannot reverse, and feels broken the moment someone
+   scrolls up.
+4. **Pinning is a desktop affordance.** On touch, render a stacked variant from the same data —
+   never hijack a scroll gesture on a phone.
+5. **One ease everywhere.** `cubic-bezier(.22, 1, .36, 1)`. Mixed easing is what makes a page feel
+   assembled by several people.
+
+**Where this is wrong:** anything whose job is completion rather than persuasion. A pinned section
+in a booking funnel is a bug with good intentions. One pinned sequence per page; two is a
+fairground.
+
 ## Reduced motion is a requirement
 
 ```css
@@ -97,6 +128,10 @@ unpleasant. Large translations, parallax and scale are the offenders; opacity is
 
 Ship the query, then **actually enable the OS setting and use the interface.** Everything must
 still work, with state changes instant rather than absent.
+
+For scroll-driven work this is where the real failure ships: content that starts at `opacity: 0`
+waiting for a trigger that never fires leaves a **blank page**, not a static one. Reduced motion
+must land on the finished state, not the initial one — gate the animation, never the content.
 
 ## Loading
 
