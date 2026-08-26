@@ -50,6 +50,10 @@ Eight to ten slides. Fewer than six is a post; more than twelve is not finished.
 **One idea per slide.** If a slide needs a comma-spliced second sentence to make sense, it is two
 slides. The swipe is free; crowding is not.
 
+**Half the total effort goes into slide 1.** It is the only slide most people see, and it decides
+whether the other six exist. And **say "swipe"** — only about 5% of carousels carry the prompt, and
+including it measurably lifts engagement.
+
 ## Sizing and safe areas
 
 | Platform | Canvas | Export | Notes |
@@ -68,11 +72,31 @@ app versions. Anything closer to the edge than that will eventually be covered.
 Platform limits and layouts change. **Check the current spec before a real post** rather than
 trusting this table.
 
+## The craft floor
+
+Type on a flat fill is what a carousel looks like *before* anyone designed it. Before one ships it
+has all five — **[references/visual-craft.md](references/visual-craft.md)** has the technique:
+
+1. **A ground with depth** — three or four radial colour nodes, never a single flat fill. Lightest
+   node where the eye should land; darker to the edges, which frames content without a border.
+2. **Grain** at 25–40% opacity over `mix-blend-mode: overlay`. Nobody consciously sees it, every
+   surface feels physical, and it kills the banding a large dark gradient shows once exported.
+3. **A display face with character** — not Inter, and not the body face scaled up.
+   [Fontshare](https://api.fontshare.com) is free for commercial use and carries Clash Display,
+   Satoshi, Switzer, General Sans. **One `<link>` per family**: the multi-family URL silently
+   returns only the first, and the rest fall back with no error.
+4. **One object with real depth** per content slide — a card with a hairline border, a large soft
+   shadow, and an inset top highlight, which is the detail that makes an edge catch light.
+5. **One or two accents** against a consistent base. Count the uses across the whole set; an
+   accent on every slide is not an accent.
+
 ## Type at phone size
 
 Larger than feels right on a laptop. A rough floor on a 1080-wide canvas:
 
-- **Hook: 90–140px.** Two to seven words.
+- **Hook: 90–140px.** Two to seven words. Check the word spaces after setting tracking —
+  negative letter-spacing on a wide geometric face closes the *word* gaps first, and the hook
+  becomes one long word at exactly the size that decides everything.
 - **Body: 44–60px.** If it fits at 32px it belongs in the caption, not on the slide.
 - **Labels and numbers: 28–34px**, letterspaced.
 
@@ -138,3 +162,6 @@ substitutes silently. Check with `pdffonts`.
 - Overlay the platform safe areas and confirm nothing important sits under them.
 - Count the slides against the arc: is there a hook, a proof, and exactly one ask?
 - Alt text written for every slide.
+- The craft floor is met: mesh ground, grain, display face loaded (not silently fallen back),
+  a card with depth, accents counted.
+- No banding in the exported PNG — check the file, not the browser.

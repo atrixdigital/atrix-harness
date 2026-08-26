@@ -1,169 +1,232 @@
 <meta charset="utf-8">
 <title>Carousel</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Instrument+Sans:wght@400;500;600&display=swap">
+<!-- One link PER FAMILY. Fontshare's multi-family URL silently returns only the
+     first family, and the rest fall back without any error. -->
+<link href="https://api.fontshare.com/v2/css?f%5B%5D=clash-display@600,700" rel="stylesheet">
+<link href="https://api.fontshare.com/v2/css?f%5B%5D=satoshi@400,500,700" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
 <style>
 /* ─────────────────────────────────────────────────────────────────────
    CAROUSEL TEMPLATE
 
    One <section> per slide. Sized by variables, so the same file targets
-   LinkedIn/Instagram 4:5 or X 1:1 — change --h and re-export.
+   LinkedIn/Instagram 4:5 (1350) or X 1:1 (1080).
 
-   The palette and faces here are PLACEHOLDERS. Replace them from the
-   campaign's DESIGN.md; see choosing-a-design-direction. What must NOT
-   change between campaigns is the wordmark position and the endcard —
-   that is the whole brand contract for social.
-
-   Export:
-     PDF (LinkedIn)  chrome --headless=new --no-pdf-header-footer \
-                       --virtual-time-budget=15000 --print-to-pdf=out.pdf file://…
-     PNGs (Instagram) bun run export-slides.ts carousel.html out/
+   The PALETTE is a placeholder — replace it from the campaign's DESIGN.md
+   (choosing-a-design-direction). The STRUCTURE is not: the mesh ground,
+   the grain, the card treatment and the wordmark/counter positions are the
+   craft floor and the brand contract. See references/visual-craft.md.
    ───────────────────────────────────────────────────────────────────── */
-
 :root {
   --w: 1080px;
-  --h: 1350px;          /* 1080 for X (1:1) */
+  --h: 1350px;
+  --pad: 96px;
+  --pad-bottom: 132px;
 
-  /* Safe margin. Platform UI overlays the edges and moves between app
-     versions, so nothing that matters goes outside this. */
-  --pad: 108px;         /* 10% */
-  --pad-bottom: 150px;  /* more, because captions and dots sit low */
+  --ink:    #070A0D;
+  --bone:   #EEF3F1;
+  --muted:  #8FA0A6;
+  --dim:    #5A6B72;
+  --pass:   #35C88A;
+  --fail:   #FF9F43;
+  --rule:   rgba(238,243,241,.10);
+  --card:   rgba(255,255,255,.035);
 
-  /* Placeholder palette. Replace from the campaign's DESIGN.md.
-     Deliberately NOT cream + terracotta, near-black + acid, or a purple
-     gradient — those are the three looks that currently read as
-     machine-generated, and a template that ships one is a template whose
-     default nobody changes. */
-  --ink:    #0B1012;
-  --canvas: #EDF1F2;
-  --muted:  #4B5457;
-  --accent: #0E5C4A;
-  --muted-on-ink: #7C878A;   /* the muted role, on the endcard's dark ground */
-
-  --display: "Archivo", -apple-system, Arial, sans-serif;
-  --body:    "Instrument Sans", -apple-system, Arial, sans-serif;
+  --display: "Clash Display", -apple-system, Arial, sans-serif;
+  --body:    "Satoshi", -apple-system, Arial, sans-serif;
+  --mono:    "JetBrains Mono", ui-monospace, Menlo, monospace;
 }
 
 @page { size: 1080px 1350px; margin: 0; }
 * { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; background: #333; }
+html, body { margin: 0; padding: 0; background: #000; }
 
+/* ── Ground: a mesh of three nodes, not a flat fill ──────────────────────
+   Lightest node sits where the eye should land; darker tones fall to the
+   edges and frame the content. Three nodes, not eight — more turns to mud. */
 section {
   width: var(--w); height: var(--h);
   padding: var(--pad) var(--pad) var(--pad-bottom);
-  background: var(--canvas); color: var(--ink);
-  font-family: var(--body);
+  color: var(--bone); font-family: var(--body);
   display: flex; flex-direction: column;
-  position: relative; overflow: hidden;
+  position: relative; overflow: hidden; isolation: isolate;
   page-break-after: always;
-  margin: 0 auto 24px;          /* preview gutter; irrelevant to the export */
+  margin: 0 auto 24px;
+  background:
+    radial-gradient(58% 44% at 14% 8%,   #16344A 0%, transparent 64%),
+    radial-gradient(52% 40% at 92% 26%,  #0D4C3E 0%, transparent 62%),
+    radial-gradient(80% 55% at 55% 108%, #0C1720 0%, transparent 72%),
+    var(--ink);
 }
 section:last-child { page-break-after: auto; }
 
-/* ── The brand contract: same position on every slide, every campaign ── */
-.mark {
-  position: absolute; left: var(--pad); bottom: 68px;
-  font-family: var(--display); font-variation-settings: "wdth" 125;
-  font-weight: 800; font-size: 26px; letter-spacing: .06em;
-  text-transform: uppercase; color: var(--muted);
+/* Grain. At this strength nobody consciously sees it, and every surface
+   feels physical — it also kills the 8-bit banding a large dark gradient
+   otherwise shows. */
+section::before {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  opacity: .34; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
 }
-/* Swipe affordance AND an honest length signal. */
-.counter {
-  position: absolute; right: var(--pad); bottom: 68px;
-  font-family: var(--display); font-weight: 600; font-size: 26px;
-  letter-spacing: .08em; color: var(--muted);
-  font-variant-numeric: tabular-nums;
+section > * { position: relative; z-index: 1; }
+
+/* Brand contract — identical on every slide, every campaign. */
+.mark, .counter {
+  position: absolute; bottom: 62px; z-index: 2;
+  font-family: var(--mono); font-weight: 500; font-size: 24px;
+  letter-spacing: .1em; color: var(--dim);
+}
+.mark { left: var(--pad); text-transform: uppercase; }
+.counter { right: var(--pad); font-variant-numeric: tabular-nums; }
+
+.eyebrow {
+  font-family: var(--mono); font-size: 25px; font-weight: 500;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--pass);
+  margin-bottom: 34px; display: flex; align-items: center; gap: 16px;
+}
+.eyebrow::before {
+  content: ""; width: 34px; height: 2px; background: var(--pass); flex: none;
 }
 
-.label {
-  font-family: var(--display); font-size: 30px; font-weight: 700;
-  letter-spacing: .16em; text-transform: uppercase; color: var(--accent);
-  margin-bottom: 40px;
-}
-
-/* Hook: legible at thumbnail size, or the carousel does not exist. */
 h1 {
-  font-family: var(--display); font-variation-settings: "wdth" 112;
-  font-size: 124px; font-weight: 800; line-height: .98; letter-spacing: -.03em;
-  margin: 0; text-wrap: balance;
+  font-family: var(--display); font-size: 118px; font-weight: 700;
+  line-height: .98; margin: 0; text-wrap: balance;
+  /* Clash Display ships tight. Negative tracking here closes the WORD spaces
+     before it closes the letter spaces, so the hook reads as one long word at
+     exactly the size where legibility matters most. */
+  letter-spacing: -.008em; word-spacing: .08em;
 }
 h2 {
-  font-family: var(--display); font-variation-settings: "wdth" 112;
-  font-size: 82px; font-weight: 800; line-height: 1.04; letter-spacing: -.025em;
-  margin: 0 0 36px; text-wrap: balance;
+  font-family: var(--display); font-size: 78px; font-weight: 700;
+  line-height: 1.04; letter-spacing: -.006em; word-spacing: .07em;
+  margin: 0 0 30px; text-wrap: balance;
 }
-p {
-  font-size: 50px; line-height: 1.42; color: var(--muted);
-  margin: 0; max-width: 16ch;      /* 4–7 words a line */
-}
+p { font-size: 44px; line-height: 1.45; color: var(--muted); margin: 0; max-width: 19ch; }
+p + p { margin-top: 24px; }
+b { color: var(--bone); font-weight: 700; }
 .spacer { flex: 1; }
 
-/* A single number, when the slide's job is one number. */
-.stat { font-family: var(--display); font-size: 190px; font-weight: 800;
-        line-height: .9; letter-spacing: -.04em; color: var(--accent); }
-.stat-l { font-size: 44px; color: var(--muted); margin-top: 24px; }
+/* ── The terminal card: a real object, with depth ─────────────────────── */
+.term {
+  background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
+  border: 1px solid var(--rule); border-radius: 18px;
+  padding: 38px 42px; font-family: var(--mono); font-size: 36px; line-height: 1.66;
+  box-shadow: 0 40px 90px -30px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.07);
+  backdrop-filter: blur(2px);
+}
+.term .cmd { color: var(--dim); margin-bottom: 20px; }
+.term .ok  { color: var(--pass); }
+.term .bad { color: var(--fail); }
+.term .sum {
+  color: var(--bone); font-weight: 700; margin-top: 20px;
+  padding-top: 20px; border-top: 1px solid var(--rule);
+}
+/* A soft bloom behind the card, so the green reads as emitted light. */
+.glow {
+  position: absolute; left: 50%; top: 62%; width: 700px; height: 340px;
+  transform: translateX(-50%); border-radius: 50%; z-index: 0;
+  background: var(--pass); opacity: .13; filter: blur(150px); pointer-events: none;
+}
 
-/* Endcard: same structure in every campaign, whatever the palette. */
-.endcard { background: var(--ink); color: var(--canvas); }
-.endcard h2 { color: var(--canvas); }
-.endcard .mark, .endcard .counter, .endcard p { color: var(--muted-on-ink); }
+/* A number used as a graphic, not as text. */
+.figure {
+  font-family: var(--display); font-weight: 700; letter-spacing: -.06em;
+  font-size: 460px; line-height: .74; color: transparent;
+  background: linear-gradient(160deg, var(--fail), #E0653C 70%);
+  -webkit-background-clip: text; background-clip: text;
+}
+.figure-l { font-size: 42px; color: var(--muted); max-width: 21ch; margin-top: 18px; }
+
+.swipe {
+  position: absolute; right: var(--pad); bottom: 118px; z-index: 2;
+  font-family: var(--mono); font-size: 24px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--pass);
+}
+
+/* Endcard inverts, keeps its structure. */
+.endcard { background: var(--bone); color: var(--ink); }
+.endcard::before { mix-blend-mode: multiply; opacity: .16; }
+.endcard h2 { color: var(--ink); }
+.endcard p { color: #52605F; }
+.endcard .eyebrow { color: #0C7A54; }
+.endcard .eyebrow::before { background: #0C7A54; }
+.endcard .mark, .endcard .counter { color: #7C8A88; }
 .cta {
-  font-family: var(--display); font-size: 46px; font-weight: 700;
-  border: 3px solid var(--canvas); border-radius: 6px;
-  padding: 26px 44px; display: inline-block; align-self: flex-start;
+  font-family: var(--display); font-size: 42px; font-weight: 700; word-spacing: .06em;
+  background: var(--ink); color: var(--bone);
+  border-radius: 12px; padding: 26px 44px; display: inline-block; align-self: flex-start;
+  box-shadow: 0 22px 50px -18px rgba(0,0,0,.55);
 }
 </style>
 
-<!-- 1 · HOOK — a complete, specific claim. Written last. -->
+
+<!-- 1 · HOOK — half the total effort goes here. Written last, when you know
+     what the payload actually is. It is the only slide most people see. -->
 <section>
-  <div class="label">Engineering</div>
-  <h1>We cut p95 from 3.4s to 0.95s by moving one line.</h1>
+  <div class="eyebrow">Section label</div>
+  <h1>A complete claim, not a title.</h1>
   <div class="spacer"></div>
-  <p>It was not the database.</p>
+  <div class="glow"></div>
+  <div class="term">
+    <div class="cmd">the artifact, if the subject has one</div>
+    <div class="ok">✓ evidence line</div>
+    <div class="ok">✓ evidence line</div>
+    <div class="sum">THE SUMMARY</div>
+  </div>
+  <span class="swipe">Swipe →</span>
   <span class="mark">Atrix</span><span class="counter">01/06</span>
 </section>
 
 <!-- 2 · TENSION — what the reader currently believes -->
 <section>
-  <h2>Everyone profiles the query first.</h2>
-  <p>So did we. The query was fine. The index was fine. The cache was warm.</p>
+  <div class="eyebrow">The problem</div>
+  <h2>The belief you are overturning.</h2>
+  <p>Why it is not obvious, in one sentence.</p>
+  <p>And the <b>turn</b> that sets up the payload.</p>
   <div class="spacer"></div>
   <span class="mark">Atrix</span><span class="counter">02/06</span>
 </section>
 
-<!-- 3–4 · PAYLOAD — one idea per slide -->
+<!-- 3–4 · PAYLOAD — one idea per slide. This is the value; do not hurry it. -->
 <section>
-  <div class="label">The cause</div>
-  <h2>The functions ran in Virginia. The database was in Singapore.</h2>
-  <p>Every request paid a round trip across the planet, twice.</p>
+  <div class="eyebrow">Step one</div>
+  <h2>One idea, stated plainly.</h2>
+  <p>The supporting sentence. Four to seven words a line.</p>
   <div class="spacer"></div>
+  <div class="term">
+    <div class="cmd">context</div>
+    <div class="bad">the number that is wrong</div>
+    <div class="ok">the number that is right</div>
+    <div class="sum">THE CONSEQUENCE</div>
+  </div>
   <span class="mark">Atrix</span><span class="counter">03/06</span>
 </section>
 
 <section>
-  <div class="label">The fix</div>
-  <h2>One region setting.</h2>
-  <p>Move the compute to the data. Not the other way around — the data is the heavy thing.</p>
+  <div class="eyebrow">Step two</div>
+  <h2>The second idea.</h2>
+  <p>Kept to one thought. If it needs a second sentence to make sense, it is two slides.</p>
   <div class="spacer"></div>
   <span class="mark">Atrix</span><span class="counter">04/06</span>
 </section>
 
-<!-- 5 · PROOF — one number -->
+<!-- 5 · PROOF — one number, treated as a picture -->
 <section>
-  <div class="label">Result</div>
+  <div class="eyebrow">Result</div>
   <div class="spacer"></div>
-  <div class="stat">−72%</div>
-  <div class="stat-l">p95 latency, same code, same queries</div>
+  <div class="figure">72%</div>
+  <div class="figure-l">what the number measures, and over what window</div>
   <div class="spacer"></div>
+  <p>The one-line context that makes it credible.</p>
   <span class="mark">Atrix</span><span class="counter">05/06</span>
 </section>
 
-<!-- 6 · ONE ask -->
+<!-- 6 · ONE ask. Not three. -->
 <section class="endcard">
-  <h2>Check where your functions actually run.</h2>
-  <p>It takes two minutes and it is the cheapest latency win there is.</p>
+  <div class="eyebrow">What to do</div>
+  <h2>One action, in the imperative.</h2>
+  <p>Why it is worth two minutes.</p>
   <div class="spacer"></div>
   <span class="cta">atrix.dev</span>
   <span class="mark">Atrix</span><span class="counter">06/06</span>
