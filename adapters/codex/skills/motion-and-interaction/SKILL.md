@@ -1,12 +1,13 @@
 ---
 name: motion-and-interaction
 description: >
-  Add motion that makes an interface feel responsive rather than decorated — durations,
-  easing, what to animate, scroll choreography, 3D depth and reduced-motion support. Use
-  when adding animation or transitions, building hover and press states, a modal, drawer,
-  toast or page transition, when building a landing or launch page with scroll-driven
-  motion, parallax, pinned sections, smooth scrolling or a 3D tilt card, or when an
-  interface feels sluggish, janky or over-animated.
+  Add motion and atmosphere that make an interface feel crafted rather than decorated —
+  durations, easing, scroll choreography, 3D depth, ambient backgrounds and reduced-motion
+  support. Use when adding animation or transitions, building hover and press states, a
+  modal, drawer, toast or page transition, when building a landing or launch page with
+  scroll-driven motion, parallax, pinned sections, smooth scrolling, a 3D tilt card, a
+  glow or gradient background, a canvas or shader effect, or when an interface feels
+  sluggish, janky or over-animated.
 group: engineering
 ---
 
@@ -89,9 +90,13 @@ A persuasion page — a launch, a product story, an owner-acquisition page — c
 motion than a product screen, and the techniques are different in kind: momentum scrolling, a
 pinned stage that content cycles through, a card that tilts in real 3D under the cursor.
 
-**[references/scroll-choreography.md](references/scroll-choreography.md)** has the full recipes,
-taken from the Pakistan Pass page in `digitalpakistan/dpak` — read
-`src/components/landing/pass-*.tsx` before building a new one.
+Two references carry the full recipes, both taken from the Pakistan Pass page in
+`digitalpakistan/dpak` — read `src/components/landing/pass-*.tsx` before building a new one.
+
+- **[references/scroll-choreography.md](references/scroll-choreography.md)** — momentum scroll, the
+  progress rail, hero scroll-away, the pinned sequence, the 3D tilt card, scene transitions.
+- **[references/backgrounds-and-atmosphere.md](references/backgrounds-and-atmosphere.md)** — the
+  ground/texture/light layer stack, seamless sections, and when a canvas or shader is justified.
 
 The five rules that decide whether it reads as crafted or as effects:
 
@@ -111,6 +116,25 @@ The five rules that decide whether it reads as crafted or as effects:
 **Where this is wrong:** anything whose job is completion rather than persuasion. A pinned section
 in a booking funnel is a bug with good intentions. One pinned sequence per page; two is a
 fairground.
+
+## Atmosphere is four layers, and none of it is a shader
+
+Depth behind the content comes from stacking, in this order: a **ground** gradient that starts and
+ends on the same colour so sections stack without a seam; a **texture** (a fine dot grid at
+0.1–0.4 opacity) so a large dark area does not read as an empty div; two or three **light** sources
+— 400–620px circles blurred 140–170px, positioned off-canvas at low alpha so you see falloff rather
+than shape; then the **content**, which needs `relative` or it renders behind all of it.
+
+Every decorative layer is `absolute` and `pointer-events-none`. A full-bleed glow over a button is
+a dead button, and it fails silently.
+
+**Keep the blurs static.** A still 620px blur is paid once; the same element animating is paid
+every frame, and it is the most common cause of a page that scrolls at 30fps on a mid-range phone.
+
+Reach for `<canvas>` or WebGL only when the effect is genuinely generative or reactive — particles,
+evolving noise, per-pixel response to input. Everything described above is compositor work the
+browser already optimises; a shader reproducing it buys nothing and costs a context, a render loop
+and a fallback path.
 
 ## Reduced motion is a requirement
 
