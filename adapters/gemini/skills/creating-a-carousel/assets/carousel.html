@@ -1,0 +1,170 @@
+<meta charset="utf-8">
+<title>Carousel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Instrument+Sans:wght@400;500;600&display=swap">
+
+<style>
+/* ─────────────────────────────────────────────────────────────────────
+   CAROUSEL TEMPLATE
+
+   One <section> per slide. Sized by variables, so the same file targets
+   LinkedIn/Instagram 4:5 or X 1:1 — change --h and re-export.
+
+   The palette and faces here are PLACEHOLDERS. Replace them from the
+   campaign's DESIGN.md; see choosing-a-design-direction. What must NOT
+   change between campaigns is the wordmark position and the endcard —
+   that is the whole brand contract for social.
+
+   Export:
+     PDF (LinkedIn)  chrome --headless=new --no-pdf-header-footer \
+                       --virtual-time-budget=15000 --print-to-pdf=out.pdf file://…
+     PNGs (Instagram) bun run export-slides.ts carousel.html out/
+   ───────────────────────────────────────────────────────────────────── */
+
+:root {
+  --w: 1080px;
+  --h: 1350px;          /* 1080 for X (1:1) */
+
+  /* Safe margin. Platform UI overlays the edges and moves between app
+     versions, so nothing that matters goes outside this. */
+  --pad: 108px;         /* 10% */
+  --pad-bottom: 150px;  /* more, because captions and dots sit low */
+
+  /* Placeholder palette. Replace from the campaign's DESIGN.md.
+     Deliberately NOT cream + terracotta, near-black + acid, or a purple
+     gradient — those are the three looks that currently read as
+     machine-generated, and a template that ships one is a template whose
+     default nobody changes. */
+  --ink:    #0B1012;
+  --canvas: #EDF1F2;
+  --muted:  #4B5457;
+  --accent: #0E5C4A;
+  --muted-on-ink: #7C878A;   /* the muted role, on the endcard's dark ground */
+
+  --display: "Archivo", -apple-system, Arial, sans-serif;
+  --body:    "Instrument Sans", -apple-system, Arial, sans-serif;
+}
+
+@page { size: 1080px 1350px; margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: #333; }
+
+section {
+  width: var(--w); height: var(--h);
+  padding: var(--pad) var(--pad) var(--pad-bottom);
+  background: var(--canvas); color: var(--ink);
+  font-family: var(--body);
+  display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+  page-break-after: always;
+  margin: 0 auto 24px;          /* preview gutter; irrelevant to the export */
+}
+section:last-child { page-break-after: auto; }
+
+/* ── The brand contract: same position on every slide, every campaign ── */
+.mark {
+  position: absolute; left: var(--pad); bottom: 68px;
+  font-family: var(--display); font-variation-settings: "wdth" 125;
+  font-weight: 800; font-size: 26px; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--muted);
+}
+/* Swipe affordance AND an honest length signal. */
+.counter {
+  position: absolute; right: var(--pad); bottom: 68px;
+  font-family: var(--display); font-weight: 600; font-size: 26px;
+  letter-spacing: .08em; color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.label {
+  font-family: var(--display); font-size: 30px; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--accent);
+  margin-bottom: 40px;
+}
+
+/* Hook: legible at thumbnail size, or the carousel does not exist. */
+h1 {
+  font-family: var(--display); font-variation-settings: "wdth" 112;
+  font-size: 124px; font-weight: 800; line-height: .98; letter-spacing: -.03em;
+  margin: 0; text-wrap: balance;
+}
+h2 {
+  font-family: var(--display); font-variation-settings: "wdth" 112;
+  font-size: 82px; font-weight: 800; line-height: 1.04; letter-spacing: -.025em;
+  margin: 0 0 36px; text-wrap: balance;
+}
+p {
+  font-size: 50px; line-height: 1.42; color: var(--muted);
+  margin: 0; max-width: 16ch;      /* 4–7 words a line */
+}
+.spacer { flex: 1; }
+
+/* A single number, when the slide's job is one number. */
+.stat { font-family: var(--display); font-size: 190px; font-weight: 800;
+        line-height: .9; letter-spacing: -.04em; color: var(--accent); }
+.stat-l { font-size: 44px; color: var(--muted); margin-top: 24px; }
+
+/* Endcard: same structure in every campaign, whatever the palette. */
+.endcard { background: var(--ink); color: var(--canvas); }
+.endcard h2 { color: var(--canvas); }
+.endcard .mark, .endcard .counter, .endcard p { color: var(--muted-on-ink); }
+.cta {
+  font-family: var(--display); font-size: 46px; font-weight: 700;
+  border: 3px solid var(--canvas); border-radius: 6px;
+  padding: 26px 44px; display: inline-block; align-self: flex-start;
+}
+</style>
+
+<!-- 1 · HOOK — a complete, specific claim. Written last. -->
+<section>
+  <div class="label">Engineering</div>
+  <h1>We cut p95 from 3.4s to 0.95s by moving one line.</h1>
+  <div class="spacer"></div>
+  <p>It was not the database.</p>
+  <span class="mark">Atrix</span><span class="counter">01/06</span>
+</section>
+
+<!-- 2 · TENSION — what the reader currently believes -->
+<section>
+  <h2>Everyone profiles the query first.</h2>
+  <p>So did we. The query was fine. The index was fine. The cache was warm.</p>
+  <div class="spacer"></div>
+  <span class="mark">Atrix</span><span class="counter">02/06</span>
+</section>
+
+<!-- 3–4 · PAYLOAD — one idea per slide -->
+<section>
+  <div class="label">The cause</div>
+  <h2>The functions ran in Virginia. The database was in Singapore.</h2>
+  <p>Every request paid a round trip across the planet, twice.</p>
+  <div class="spacer"></div>
+  <span class="mark">Atrix</span><span class="counter">03/06</span>
+</section>
+
+<section>
+  <div class="label">The fix</div>
+  <h2>One region setting.</h2>
+  <p>Move the compute to the data. Not the other way around — the data is the heavy thing.</p>
+  <div class="spacer"></div>
+  <span class="mark">Atrix</span><span class="counter">04/06</span>
+</section>
+
+<!-- 5 · PROOF — one number -->
+<section>
+  <div class="label">Result</div>
+  <div class="spacer"></div>
+  <div class="stat">−72%</div>
+  <div class="stat-l">p95 latency, same code, same queries</div>
+  <div class="spacer"></div>
+  <span class="mark">Atrix</span><span class="counter">05/06</span>
+</section>
+
+<!-- 6 · ONE ask -->
+<section class="endcard">
+  <h2>Check where your functions actually run.</h2>
+  <p>It takes two minutes and it is the cheapest latency win there is.</p>
+  <div class="spacer"></div>
+  <span class="cta">atrix.dev</span>
+  <span class="mark">Atrix</span><span class="counter">06/06</span>
+</section>
