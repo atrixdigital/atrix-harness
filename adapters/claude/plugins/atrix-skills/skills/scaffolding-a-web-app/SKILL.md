@@ -1,18 +1,19 @@
 ---
 name: scaffolding-a-web-app
 description: >
-  Stand up a new Atrix web project with the whole house stack wired on day one — Next.js,
-  Tailwind tokens and theming, i18n, SEO and analytics, fonts, Postgres with Kysely,
-  migrations and Redis. Use when starting a new web app or site, setting up a project from
-  scratch, or bringing an existing project up to the house standard.
+  Stand up a new Atrix web project with the whole house stack wired on day one — a chosen
+  design direction, Tailwind tokens and theming, i18n, SEO and analytics, fonts, Postgres
+  with Kysely, migrations and Redis. Use when starting a new web app or site, when someone
+  says "build me a…", when setting up a project from scratch, or when bringing an existing
+  project up to the house standard.
 group: delivery
 ---
 
 # Scaffolding a web app
 
-The order below exists because each step is cheap now and expensive later. **i18n, theming and the
-data layer are the three that cost days to retrofit** — none of our current apps have i18n, which
-is exactly why.
+The order below exists because each step is cheap now and expensive later. **The design direction,
+i18n, theming and the data layer are the four that cost days to retrofit** — none of our current
+apps have i18n, which is exactly why.
 
 Do not ask the human to run these. Run them, then report what was created.
 
@@ -30,38 +31,47 @@ Do not ask the human to run these. Run them, then report what was created.
 | Migrations | `kysely-ctl`, timestamp-prefixed |
 | Cache | Redis — Upstash on serverless, ioredis in workers |
 | Validation | Zod at every boundary |
+| Design direction | Chosen with the human, pinned to `DESIGN.md` |
 
 ## Order of work
 
 **1 — Create, then commit before anything else.** `create-next-app` with TypeScript, App Router,
 Tailwind. Commit the untouched output so every later change is reviewable as a diff.
 
-**2 — Tokens and theming.** Before the first component. A component written against `bg-white` is a
-component to rewrite. Set up the three-layer token structure and the dark variant — see
-`tailwind-theming`.
+**2 — The design direction, chosen and pinned.** Before any token has a value. Run
+`choosing-a-design-direction`: pitch two or three distinct directions, get a decision, and commit
+`DESIGN.md`. Tokens invented before a direction exists are tokens you will rewrite, and the
+direction is the cheapest thing in the project to change right now.
 
-**3 — Fonts.** `src/lib/fonts.ts`, variable files self-hosted, wired to `--font-*` tokens. Record
+Skip only when the product already has a design system to match.
+
+**3 — Tokens and theming.** Straight out of `DESIGN.md`. Before the first component — a component
+written against `bg-white` is a component to rewrite. Three-layer token structure and the dark
+variant, per `tailwind-theming`.
+
+**4 — Fonts.** `src/lib/fonts.ts`, variable files self-hosted, wired to `--font-*` tokens. Record
 the licence next to the files — see `typography-and-fonts`.
 
-**4 — i18n.** `routing.ts`, `request.ts`, `navigation.ts`, middleware, and move `app/` under
+**5 — i18n.** `routing.ts`, `request.ts`, `navigation.ts`, `proxy.ts` (**not** `middleware.ts` —
+Next 16 renamed it and the old name silently never runs), and move `app/` under
 `app/[locale]/`. **Do this with one locale if the product is monolingual today** — the cost is an
 hour now against days later. `setRequestLocale` in every layout and page — see `nextjs-i18n`.
 
-**5 — SEO scaffolding.** `src/lib/seo.ts` with the site constants and `pageMetadata()`,
+**6 — SEO scaffolding.** `src/lib/seo.ts` with the site constants and `pageMetadata()`,
 `metadataBase` in the root layout, `app/sitemap.ts`, `app/robots.ts`, an OG image, `llms.txt` — see
 `seo-and-analytics`.
 
-**6 — Data layer.** Kysely instance at module scope, generated types committed, `kysely-ctl`
+**7 — Data layer.** Kysely instance at module scope, generated types committed, `kysely-ctl`
 configured, first migration written and run. Two connection strings: pooled for the app, direct for
 migrations — see `kysely-postgres`.
 
-**7 — Cache.** `src/lib/cache.ts` with the single `cached()` interface, even if nothing uses it
+**8 — Cache.** `src/lib/cache.ts` with the single `cached()` interface, even if nothing uses it
 yet. It exists so the first cache call goes through it — see `caching-with-redis`.
 
-**8 — Analytics, gated on env.** GA renders only when `NEXT_PUBLIC_GA_ID` is set, so previews stay
+**9 — Analytics, gated on env.** GA renders only when `NEXT_PUBLIC_GA_ID` is set, so previews stay
 out of production data.
 
-**9 — Onboard it to the harness.** `AGENTS.md` (stack and commands), `UNDERSTANDINGS.md`, then
+**10 — Onboard it to the harness.** `AGENTS.md` (stack and commands), `UNDERSTANDINGS.md`, then
 `atrix init` and `atrix index` — see `onboarding-a-project`.
 
 ## Environment

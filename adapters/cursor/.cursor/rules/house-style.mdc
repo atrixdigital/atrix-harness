@@ -11,7 +11,7 @@ globs: **
 |---|---|---|
 | PDF, report, audit, brief, proposal, guide | **House style, exactly** | `producing-a-document` |
 | Deck, pitch, slides | **House style, exactly** | `creating-a-deck` |
-| Any UI — app, site, page, component | **A direction chosen for this brief** | `frontend-design`, then `layout-and-spacing`, `motion-and-interaction`, `verifying-ui-visually` |
+| Any UI — app, site, page, component | **A direction chosen for this brief** | `choosing-a-design-direction`, then `building-ui`, `layout-and-spacing`, `motion-and-interaction`, `verifying-ui-visually` |
 
 A document that looks like the other Atrix documents is trusted more than a better-designed one
 that looks foreign — consistency is the whole point, and the templates in `assets/` are already
@@ -25,7 +25,10 @@ gradient, Inter. **Commit to a direction before writing code**, derive every col
 decision from it, and let one signature element carry the boldness while everything around it stays
 quiet.
 
-The escape is process, not a better adjective. `frontend-design` carries that process; use it.
+The escape is process, not a better adjective. **Pitch the options to the human before writing
+code** — `choosing-a-design-direction` — and pin the winner to `DESIGN.md` so the next session
+builds from the same decision instead of re-deriving a different one. `frontend-design` carries the
+generation process behind those pitches.
 
 ## The brand, if you need it directly
 

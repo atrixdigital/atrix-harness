@@ -11,10 +11,14 @@ Most UI bugs are not rendering bugs. They are states nobody triggered locally.
 ## Decide the direction before you write code
 
 For anything new — a page, a section, a product surface — the direction comes first: palette, type
-pairing, layout concept, and the one signature element it will be remembered by. Load
-`frontend-design` and run its process. Without a direction, the output converges on the same
-centred hero, three rounded cards and Inter that every generated interface has, and no amount of
-later polish rescues it.
+pairing, layout concept, and the one signature element it will be remembered by. Without one, the
+output converges on the same centred hero, three rounded cards and Inter that every generated
+interface has, and no amount of later polish rescues it.
+
+**Do not pick it silently.** Run `choosing-a-design-direction`: pitch two or three complete,
+distinct directions, let the human choose, and pin the winner to `DESIGN.md` before writing
+components. Changing a paragraph is free; changing a built page is a day. `frontend-design` carries
+the generation process those pitches come from.
 
 Within an existing product, the direction already exists — match it. `layout-and-spacing` covers
 composition, `motion-and-interaction` covers movement, and `tailwind-theming` covers tokens.
