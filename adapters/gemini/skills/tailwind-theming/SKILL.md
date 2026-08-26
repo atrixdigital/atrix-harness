@@ -73,6 +73,22 @@ edit to layer 1.
 **`@theme inline` is not optional here.** Plain `@theme` resolves the variable once at build time,
 so the dark override never takes effect and the theme silently does nothing.
 
+**The two namespaces must differ.** Tailwind's theme keys are `--color-*`, so the semantic layer
+needs its own prefix:
+
+```css
+/* ✗ self-referential — the bridge resolves to itself */
+:root      { --color-canvas: var(--zinc-50); }
+@theme inline { --color-canvas: var(--color-canvas); }
+
+/* ✓ semantic layer is namespaced, the bridge maps across */
+:root      { --app-canvas: var(--zinc-50); }
+@theme inline { --color-canvas: var(--app-canvas); }
+```
+
+Easy to write and easy to miss, because nothing errors — you get an unstyled or half-styled page
+and start looking in the wrong place.
+
 ## Naming tokens
 
 Name the job, not the appearance. `--danger`, not `--red`; a danger that turns amber later should

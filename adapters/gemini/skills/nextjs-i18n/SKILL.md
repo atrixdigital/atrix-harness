@@ -23,10 +23,20 @@ src/
     routing.ts      defineRouting — the list of locales, the default
     request.ts      getRequestConfig — loads messages for the active locale
     navigation.ts   locale-aware <Link>, redirect, useRouter
-  middleware.ts     negotiates locale, rewrites to /[locale]
+  proxy.ts          negotiates locale, rewrites to /[locale]  ← NOT middleware.ts
   app/[locale]/     every route lives under here
 messages/
   en.json  ar.json  …
+```
+
+**`proxy.ts`, not `middleware.ts`.** Next 16 renamed the convention; next-intl's own docs still
+say middleware, and under the old name the file compiles, lints, and never runs — no locale
+negotiation, no error. The build output must print `ƒ Proxy (Middleware)`.
+
+```ts
+// src/proxy.ts
+export const proxy = createMiddleware(routing);
+export const config = { matcher: ['/((?!api|_next|_vercel|.*\\..*).*)'] };
 ```
 
 ```ts
@@ -134,6 +144,34 @@ attribute rather than a stylesheet rewrite.
 Icons that imply direction (arrows, chevrons, back buttons) need flipping too; decorative and brand
 marks do not.
 
+### Isolate Latin data inside RTL text
+
+Logical properties fix the *layout*. They do nothing for the **bidirectional algorithm**, which
+reorders Latin runs sitting inside an RTL paragraph:
+
+| Written | Renders in `ar` |
+|---|---|
+| `5 mg vial` | **`mg vial 5`** |
+| `99.40 %` | **`% 99.40`** |
+| `$62` | **`$US 62`** |
+
+Wrap every Latin-script technical value — SKUs, codes, sequences, dimensions, versions, file
+paths, measurements, formatted currency — in an isolate:
+
+```tsx
+<bdi dir="ltr">{peptide.format}</bdi>
+```
+
+`<bdi>` isolates by default; the explicit `dir="ltr"` covers the case where a value starts with a
+digit, which the algorithm treats as neutral and inherits the surrounding direction from.
+
+For currency, also pass `currencyDisplay: 'narrowSymbol'` — the default long form puts a Latin
+currency code inside an Arabic run, which is the same problem again.
+
+**This is invisible in the default locale and invisible in code review.** It only appears in a
+rendered RTL page, which is the argument for standing the second locale up on day one rather than
+at the end: an English-only build cannot show you this bug.
+
 ## Verify
 
 - Visit `/en` and `/ar` and confirm both render statically — check the build output marks them
@@ -141,3 +179,5 @@ marks do not.
 - View source and confirm `<html lang>` and `dir` are correct, and `hreflang` links are present.
 - Grep the diff for user-visible string literals in JSX. Every one is a missed extraction.
 - Set the browser to an unsupported locale and confirm it falls back rather than 404s.
+- **Screenshot the RTL locale and read the technical values.** Reversed units, percentages and
+  currency are the bidi bug above, and nothing but a rendered page will show it.

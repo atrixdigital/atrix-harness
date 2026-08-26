@@ -52,6 +52,50 @@ survives arming, so the behaviour can always be inspected without disabling the 
 Log the headline finding with `console.error` so it surfaces in platform logs and error tracking
 even when nobody reads the JSON response.
 
+## Read the bundled docs before you write
+
+Next ships its own agent instructions and version guide inside the package:
+
+```
+node_modules/next/dist/docs/01-app/02-guides/upgrading/version-16.md
+```
+
+Framework conventions move faster than any model's training data, and the failure mode is not a
+compile error — it is a file that is quietly never loaded. Check the guide for anything
+convention-based (file names, exported symbol names, runtime config) before writing it.
+
+### `middleware.ts` is `proxy.ts` in Next 16
+
+The filename, the named export and the runtime all changed:
+
+```ts
+// src/proxy.ts   — NOT middleware.ts
+export const proxy = createMiddleware(routing);
+export const config = { matcher: ['/((?!api|_next|_vercel|.*\\..*).*)'] };
+```
+
+The `proxy` runtime is `nodejs` and cannot be configured; `edge` is not supported there. Libraries
+still document `middleware.ts` — `next-intl` does — so wiring it under the old name compiles,
+passes lint, and **silently never runs**. Confirm with the build output: it should print
+`ƒ Proxy (Middleware)`.
+
+Also async in 16: `params` and `searchParams` are promises, and so are the `params`/`id` passed to
+icon and open-graph image generators.
+
+## React 19: no `setState` in an effect
+
+The `mounted` guard everyone writes for theme and other client-only values is now a lint error
+(`react-hooks/set-state-in-effect`):
+
+```tsx
+// ✗ flagged
+useEffect(() => setMounted(true), []);
+
+// ✓ false on the server, true on the client, no state involved
+const subscribe = () => () => {};
+const mounted = useSyncExternalStore(subscribe, () => true, () => false);
+```
+
 ## Related skills
 
 Metadata, sitemaps and the caching traps that deindex pages are in `seo-and-analytics`. Locale
